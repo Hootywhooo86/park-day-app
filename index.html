@@ -1,0 +1,1644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#000000" />
+  <title>Park Day</title>
+  <style>
+    :root {
+      --bg: #000000;
+      --bg2: #000000;
+      --card: #140a1c;
+      --card2: #1c1028;
+      --line: #2e2238;
+      --text: #ffffff;
+      --muted: #b8b0c4;
+      --green: #3ddc84;
+      --yellow: #f5c451;
+      --red: #ff5d6c;
+      --gray: #7d86a3;
+      --accent: #b794f6;
+      --gold: #e8c47a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text); min-height: 100vh; padding-bottom: 48px;
+    }
+    header {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 16px;
+      background: rgba(0,0,0,.86);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--line);
+    }
+    header h1 { font-size: 1.08rem; font-weight: 700; flex: 1; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .icon-btn {
+      border: 1px solid var(--line); background: var(--card); color: var(--text);
+      border-radius: 10px; padding: 7px 10px; cursor: pointer; font-size: .95rem;
+    }
+    main { max-width: 680px; margin: 0 auto; padding: 16px; }
+    .hero {
+      background: linear-gradient(135deg, #1c1028, #140a1c);
+      border: 1px solid var(--line); border-radius: 18px; padding: 18px;
+      margin-bottom: 12px;
+    }
+    .hero h2 { font-size: 1.35rem; margin-bottom: 4px; }
+    .hero p { color: var(--muted); font-size: .9rem; }
+    .home-card, .park-card, .item-card, .food-card {
+      background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+      padding: 15px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    }
+    .home-card { margin-bottom: 10px; cursor: pointer; }
+    .home-card:active, .park-card:active, .item-card:active { transform: scale(.985); background: var(--card2); }
+    .home-left { display: flex; gap: 12px; align-items: center; }
+    .badge-icon {
+      width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center;
+      background: #1c1028; font-size: 1.3rem;
+    }
+    .kicker { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+    .title { font-size: 1.02rem; font-weight: 650; }
+    .sub { font-size: .8rem; color: var(--muted); margin-top: 2px; }
+    .search {
+      width: 100%; margin: 4px 0 14px; padding: 12px 14px; border-radius: 14px;
+      border: 1px solid var(--line); background: var(--card); color: var(--text); font-size: 1rem;
+    }
+    .section { font-size: .72rem; color: var(--gold); letter-spacing: .1em; text-transform: uppercase; font-weight: 700; margin: 18px 0 8px; }
+    .park-grid { display: grid; gap: 8px; }
+    .hours-chip { font-size: .75rem; color: var(--muted); text-align: right; white-space: nowrap; }
+    .hours-chip b { color: var(--text); display: block; font-size: .82rem; }
+    .weather {
+      display: flex; justify-content: space-between; align-items: center;
+      background: linear-gradient(135deg, #1c1028, #140a1c);
+      border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; margin-bottom: 12px;
+    }
+    .temp { font-size: 1.7rem; font-weight: 750; }
+    .legend { display: flex; gap: 10px; flex-wrap: wrap; color: var(--muted); font-size: .75rem; margin: 8px 0 12px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+    .land-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      margin: 18px 0 10px; padding: 6px 2px 4px;
+    }
+    .land-head .land {
+      margin: 0; padding: 4px 0;
+      font-size: 1.05rem; font-weight: 800; color: var(--gold);
+      letter-spacing: .04em; text-transform: uppercase; line-height: 1.2; flex: 1; min-width: 0;
+    }
+    .land {
+      margin: 16px 0 8px; padding: 8px 2px;
+      font-size: .95rem; font-weight: 800; color: var(--gold); letter-spacing: .04em; text-transform: uppercase;
+    }
+    .land-map { flex-shrink: 0; opacity: .95; }
+    .land-map svg { width: 120px; height: auto; display: block; }
+    .item-card { margin-bottom: 8px; cursor: default; }
+    .wait {
+      min-width: 68px; text-align: center; font-weight: 800; font-size: .9rem;
+      padding: 6px 10px; border-radius: 999px;
+    }
+    .g { background: rgba(61,220,132,.14); color: var(--green); }
+    .y { background: rgba(245,196,81,.14); color: var(--yellow); }
+    .r { background: rgba(255,93,108,.16); color: var(--red); }
+    .z { background: rgba(125,134,163,.14); color: var(--gray); }
+    .ll { font-size: .7rem; color: var(--muted); margin-top: 3px; text-align: right; }
+    .note { color: var(--muted); font-size: .78rem; text-align: center; margin-top: 16px; line-height: 1.45; }
+    .note a { color: var(--accent); }
+    .loading { text-align: center; padding: 48px 16px; color: var(--muted); }
+    .spin { width: 26px; height: 26px; border: 3px solid var(--line); border-top-color: var(--accent); border-radius: 50%; margin: 0 auto 10px; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+    .tab { flex: 1; text-align: center; padding: 10px 8px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--text); font-weight: 700; font-size: .82rem; cursor: pointer; }
+    .tab.on { background: var(--accent); border-color: var(--accent); color: white; }
+    .menu-row { display: flex; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .menu-row:last-child { border-bottom: none; }
+    .add-btn { border: 0; background: var(--accent); color: #fff; border-radius: 999px; padding: 8px 14px; font-weight: 700; cursor: pointer; width: 100%; font-size: 1rem; }
+    .cart {
+      position: sticky; bottom: 10px; margin-top: 16px;
+      background: #1c1028; border: 1px solid #3a2a4a; border-radius: 16px; padding: 12px 14px;
+    }
+    .thumb { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; background: #1c1028; }
+    .cat-row { display: flex; gap: 6px; margin: 8px 0 12px; flex-wrap: wrap; }
+    .cat-row button { flex: 1; min-width: 72px; }
+    .cart b { font-size: 1.05rem; }
+    .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .calhead { font-size: .65rem; color: var(--muted); text-align: center; padding: 4px 0; }
+    .day {
+      background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+      min-height: 54px; padding: 6px 4px; text-align: center; font-size: .72rem;
+    }
+    .day .n { font-weight: 800; display: block; }
+    .day .h { color: var(--muted); font-size: .62rem; }
+    .day.today { border-color: var(--accent); }
+    .day.wknd { background: #1a0f24; }
+    footer { text-align: center; color: var(--muted); font-size: .68rem; padding: 24px 16px; line-height: 1.5; }
+    footer a { color: var(--accent); }
+    .fx-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:0 0 12px; }
+    .fx-row label { font-size:.78rem; color:var(--muted); }
+    .fx-convert { font-size:.95rem; font-weight:600; margin-top:8px; color:var(--muted); }
+    .fx-convert .fx-amount { color:var(--red); font-weight:750; }
+    .budget-left { font-size:1.05rem; font-weight:700; margin-top:8px; color:var(--good,#3d9a5f); }
+    .budget-over { font-size:1.05rem; font-weight:700; margin-top:8px; color:var(--bad,#c44); }
+    .budget-prompt { font-size:.8rem; margin-top:8px; color:var(--muted); }
+    .budget-controls { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 12px; }
+    .budget-controls input { flex:1; min-width:100px; }
+    .fx-row select, .dmg-select {
+      padding:10px 12px; border-radius:12px; border:1px solid var(--line);
+      background:var(--card); color:var(--text); font-size:.95rem;
+    }
+    .dmg-select { width:100%; margin:0 0 8px; }
+    .ocr-status { font-size:.82rem; color:var(--accent); margin:6px 0 10px; min-height:1.2em; }
+    .day-scan { background:var(--card); border:1px solid var(--line); border-radius:16px; margin-bottom:8px; overflow:hidden; }
+    .day-scan > summary {
+      list-style:none; cursor:pointer; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; gap:12px;
+    }
+    .day-scan > summary::-webkit-details-marker { display:none; }
+    .day-scan[open] > summary { border-bottom:1px solid var(--line); }
+    .day-scan .receipt-row { padding:12px 16px; border-bottom:1px solid var(--line); display:flex; gap:12px; align-items:flex-start; }
+    .day-scan .receipt-row:last-child { border-bottom:none; }
+    textarea.search { min-height:72px; resize:vertical; font-family:inherit; line-height:1.4; }
+
+    .home-stack { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
+    .home-btn {
+      display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+      width: 100%; text-align: left; cursor: pointer;
+      border: 1px solid rgba(183,148,246,.28);
+      border-radius: 22px; padding: 22px 20px;
+      background: linear-gradient(145deg, #1c1028 0%, #160d1f 55%, #12081a 100%);
+      box-shadow: 0 10px 28px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.06);
+      color: var(--text); transition: transform .12s ease, border-color .12s ease;
+    }
+    .home-btn:active { transform: scale(.975); border-color: var(--accent); }
+    .home-btn .home-emoji {
+      width: 56px; height: 56px; border-radius: 18px;
+      display: grid; place-items: center; font-size: 1.65rem;
+      background: rgba(183,148,246,.16); border: 1px solid rgba(183,148,246,.25);
+    }
+    .home-btn .home-label { font-size: 1.35rem; font-weight: 750; letter-spacing: .01em; }
+    .home-btn .home-hint { font-size: .88rem; color: var(--muted); line-height: 1.35; }
+    .home-hero {
+      text-align: center; padding: 28px 16px 18px;
+    }
+    .home-hero h2 {
+      font-size: 1.85rem; font-weight: 800; margin-bottom: 8px;
+      background: linear-gradient(90deg, #fff, #d4c4f0);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .home-hero p { color: var(--muted); font-size: .92rem; line-height: 1.45; max-width: 28rem; margin: 0 auto; }
+  </style>
+</head>
+<body>
+  <header>
+    <button class="icon-btn" id="backBtn" style="display:none" onclick="goBack()">←</button>
+    <h1 id="pageTitle">Park Day</h1>
+    <button class="icon-btn" id="refreshBtn" style="display:none" onclick="refreshCurrent()">↻</button>
+  </header>
+  <main id="app"><div class="loading"><div class="spin"></div>Loading parks…</div></main>
+  <footer>
+    Live waits from <a href="https://themeparks.wiki" target="_blank">ThemeParks.wiki</a> · Weather via Open-Meteo<br>
+    Receipts stay on this phone. Not affiliated with Disney or Universal.
+  </footer>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script>
+const API = "https://api.themeparks.wiki/v1";
+const PRIORITY = ["disneylandresort","waltdisneyworldresort","universalorlandoresort","universalresort_orlando","universalresort_hollywood"];
+const PARK_COORDS = {
+  "7340550b-c14d-4def-80bb-acdb51d49a66":[33.8121,-117.9190],
+  "832fcd51-ea19-4e77-85c7-75d5843b127c":[33.8061,-117.9209],
+  "75ea578a-adc8-4116-a54d-dccb60765ef9":[28.4177,-81.5812],
+  "47f90d2c-e191-4239-a466-5892ef59a88b":[28.3747,-81.5494],
+  "288747d1-8b4f-4a64-867e-ea7c9b27bad8":[28.3575,-81.5583],
+  "1c84a229-8862-4648-9c71-378ddd2c7693":[28.3553,-81.5901],
+  "12dbb85b-265f-44e6-bccf-f1faa17211fc":[28.4400,-81.4500],
+  "eb3f4560-2383-4a36-9152-6b3e5ed6bc57":[28.4744,-81.4678],
+  "267615cc-8943-4c2a-ae2c-5da728ca591f":[28.4711,-81.4690],
+  "bc4005c5-8c7e-41d7-b349-cdddf1796427":[34.1381,-118.3534]
+};
+const THRILL_CROWD = {
+  "7340550b-c14d-4def-80bb-acdb51d49a66":"https://www.thrill-data.com/trip-planning/crowd-calendar/disneyland",
+  "832fcd51-ea19-4e77-85c7-75d5843b127c":"https://www.thrill-data.com/trip-planning/crowd-calendar/californiaadventure",
+  "75ea578a-adc8-4116-a54d-dccb60765ef9":"https://www.thrill-data.com/trip-planning/crowd-calendar/magickingdom",
+  "47f90d2c-e191-4239-a466-5892ef59a88b":"https://www.thrill-data.com/trip-planning/crowd-calendar/epcot",
+  "288747d1-8b4f-4a64-867e-ea7c9b27bad8":"https://www.thrill-data.com/trip-planning/crowd-calendar/hollywoodstudios",
+  "1c84a229-8862-4648-9c71-378ddd2c7693":"https://www.thrill-data.com/trip-planning/crowd-calendar/animalkingdom"
+};
+const LANDS = {
+  "7340550b-c14d-4def-80bb-acdb51d49a66": [
+    ["Main Street, U.S.A.", ["main street","disneyland railroad","great moments","partners statue","flag retreat","plaza inn","carnation","jolly holiday","gibson girl","little red wagon","refreshment corner","opera house","magical life","disney gallery","town square","city hall","emporium"]],
+    ["Adventureland", ["jungle cruise","indiana jones","tiki","adventureland treehouse","enchanted tiki","bengal","tropical hideaway"]],
+    ["New Orleans Square", ["haunted mansion","pirates of the caribbean","blue bayou","cafe orleans","café orleans","mint julep","royal street"]],
+    ["Bayou Country", ["tiana","splash mountain","davy crockett","explorer canoe","winnie the pooh","hungry bear","harbour galley"]],
+    ["Frontierland", ["big thunder","mark twain","sailing ship","golden horseshoe","frontierland shootin","stage door","river belle","tom sawyer","pirate's lair","pirates lair"]],
+    ["Fantasyland", ["small world","peter pan","matterhorn","alice","mr. toad","pinocchio","snow white","dumbo","king arthur","casey jr","storybook","mad tea","fantasyland theatre","sleeping beauty","red rose","edelweiss","troubadour"]],
+    ["Mickey's Toontown", ["toontown","gadget","roger rabbit","mickey's house","minnie's house","chip 'n' dale","runaway railway","café daisy","cafe daisy","donald's duck","duck pond","goofy's how-to-play","how-to-play yard","cenTOONial"]],
+    ["Tomorrowland", ["space mountain","star tours","buzz lightyear","autopia","finding nemo","astro orbitor","monorail","tomorrowland","alien pizza","galactic grill","pixar short","short film"]],
+    ["Star Wars: Galaxy's Edge", ["millennium falcon","rise of the resistance","smugglers run","galaxy's edge","ronto","docking bay","milk stand","oga"]]
+  ],
+  "832fcd51-ea19-4e77-85c7-75d5843b127c": [
+    ["Buena Vista Street", ["buena vista","red car trolley"]],
+    ["Hollywood Land", ["monsters","mike & sulley","mike and sulley","twilight zone","tower of terror","animation academy","disney junior","philhar","philharmagic","turtle talk","sorcerer","hyperion","freeze the night","vacation fun"]],
+    ["Avengers Campus", ["web slingers","avengers assemble","ancient sanctuary","avengers campus","guardians of the galaxy"]],
+    ["Cars Land", ["radiator springs","mater","luigi","cars land","ornament valley"]],
+    ["Pacific Wharf", ["pacific wharf"]],
+    ["Paradise Gardens Park", ["silly symphony","goofy's sky school","goofys sky school","jumpin' jellyfish","jumpin jellyfish","golden zephyr","little mermaid","maliboomer","paradise gardens","villains grove","oogie boogie","world of color"]],
+    ["Pixar Pier", ["pixar pier","pixar pal","pal-a-round","inside out","toy story","midway mania","incredicoaster","jessie","critter carousel","games of pixar","jumbo breakfast"]],
+    ["Grizzly Peak", ["grizzly river","grizzly peak","soarin","redwood creek"]],
+    ["San Fransokyo Square", ["baymax","san fransokyo","bakery tour","lucky fortune","lucky cat"]]
+  ],
+  "75ea578a-adc8-4116-a54d-dccb60765ef9": [
+    ["Main Street, U.S.A.", ["main street","walt disney world railroad","town square"]],
+    ["Adventureland", ["jungle cruise","pirates of the caribbean","swiss family","magic carpets","enchanted tiki"]],
+    ["Frontierland", ["big thunder","splash mountain","tom sawyer","country bear","frontierland"]],
+    ["Liberty Square", ["haunted mansion","hall of presidents","liberty belle"]],
+    ["Fantasyland", ["seven dwarfs","peter pan","it's a small world","prince charming","under the sea","mad tea","dumbo","barnstormer","many adventures of winnie","enchanted tales"]],
+    ["Tomorrowland", ["space mountain","tron","buzz lightyear","peoplemover","carousel of progress","astro orbiter","tomorrowland speedway","stitch"]],
+    ["Bayou Country / Tiana", ["tiana"]]
+  ],
+  "47f90d2c-e191-4239-a466-5892ef59a88b": [
+    ["World Celebration", ["spaceship earth","dreamers point","communicore","club cool"]],
+    ["World Nature", ["soarin","living with the land","seas with nemo","turtle talk","awesome planet"]],
+    ["World Discovery", ["guardians of the galaxy","test track","mission: space"]],
+    ["World Showcase", ["frozen ever after","gran fiesta","reflections of china","american adventure","impressions de france","beauty and the beast sing-along","canada far","mexico","norway","china","germany","italy","japan","morocco","france","united kingdom","americas"]]
+  ],
+  "288747d1-8b4f-4a64-867e-ea7c9b27bad8": [
+    ["Echo Lake", ["indiana jones epic stunt","star tours","vacation fun"]],
+    ["Grand Avenue", ["muppet"]],
+    ["Toy Story Land", ["slinky dog","alien swirling","toy story mania"]],
+    ["Animation Courtyard", ["launch bay","disney junior","voyage of the little mermaid"]],
+    ["Sunset Boulevard", ["tower of terror","rock 'n' roller","beauty and the beast live","fantasmic"]],
+    ["Star Wars: Galaxy's Edge", ["millennium falcon","rise of the resistance","smugglers run"]],
+    ["Hollywood Boulevard", ["runaway railway","hollywood boulevard"]]
+  ],
+  "1c84a229-8862-4648-9c71-378ddd2c7693": [
+    ["Discovery Island", ["tree of life","tough to be a bug"]],
+    ["Pandora – The World of Avatar", ["flight of passage","na'vi river"]],
+    ["Africa", ["kilimanjaro","festival of the lion king","wildlife express"]],
+    ["Rafiki's Planet Watch", ["conservation station","habitat habit","affection section"]],
+    ["Asia", ["expedition everest","kali river","feathered friends"]],
+    ["DinoLand U.S.A.", ["dinosaur","triceratops","finding nemo the musical"]]
+  ],
+  "12dbb85b-265f-44e6-bccf-f1faa17211fc": [
+    ["Celestial Park", ["constellation carousel","astronomicus"]],
+    ["Super Nintendo World", ["mario kart","yoshi","mine-cart"]],
+    ["Dark Universe", ["monsters unchained","curse of the werewolf"]],
+    ["The Wizarding World – Ministry of Magic", ["ministry of magic","le cirque arcanus"]],
+    ["Isle of Berk", ["hiccup","dragon racer","fyre drill"]]
+  ],
+  "eb3f4560-2383-4a36-9152-6b3e5ed6bc57": [
+    ["Production Central", ["hollywood rip ride","despicable me"]],
+    ["New York", ["revenge of the mummy","twilight","race through new york"]],
+    ["San Francisco", ["fast & furious"]],
+    ["World Expo", ["men in black"]],
+    ["Springfield", ["simpsons"]],
+    ["Woody Woodpecker's KidZone", ["e.t.","woody woodpecker"]],
+    ["Super Nintendo World", ["mario kart","yoshi"]],
+    ["The Wizarding World of Harry Potter", ["escape from gringotts","hogwarts express","ollivanders"]],
+    ["DreamWorks Land", ["trolls","kung fu panda","shrek"]]
+  ],
+  "267615cc-8943-4c2a-ae2c-5da728ca591f": [
+    ["Marvel Super Hero Island", ["incredible hulk","spider-man","doctor doom","storm force"]],
+    ["Toon Lagoon", ["popeye","dudley do-right"]],
+    ["Jurassic Park", ["jurassic","veloci","river adventure","raptor","pteranodon"]],
+    ["The Lost Continent", ["poseidon"]],
+    ["The Wizarding World of Harry Potter – Hogsmeade", ["forbidden journey","hippogriff","hagrid","hogwarts express"]],
+    ["Seuss Landing", ["cat in the hat","one fish","high in the sky","caro-seuss"]]
+  ],
+  "bc4005c5-8c7e-41d7-b349-cdddf1796427": [
+    ["Upper Lot", ["studio tour","waterworld"]],
+    ["Lower Lot", ["transformers","revenge of the mummy","jurassic world"]],
+    ["The Wizarding World of Harry Potter", ["forbidden journey","hippogriff","ollivanders"]],
+    ["Super Nintendo World", ["mario kart","bowser"]],
+    ["Springfield", ["simpsons"]],
+    ["The Secret Life of Pets", ["secret life of pets"]]
+  ]
+};
+
+const MENUS = {
+  "Ronto Roasters": [
+    {n:"Ronto Wrap", p:15.49, d:"Roasted pork, grilled sausage, slaw"},
+    {n:"Turkey Ronto Wrap", p:15.49, d:"Roasted turkey, slaw, peppercorn sauce"},
+    {n:"Ronto-less Garden Wrap", p:14.99, d:"Plant-based wrap"},
+    {n:"Black Caf Cold Brew", p:5.49, d:"Cold brew with mezcal foam option"}
+  ],
+  "Tiki Juice Bar": [
+    {n:"Dole Whip", p:7.49, d:"Pineapple soft-serve"},
+    {n:"Dole Whip Float", p:8.49, d:"Dole Whip with pineapple juice"},
+    {n:"Pineapple Juice", p:5.49, d:"Chilled Dole pineapple juice"}
+  ],
+  "Little Red Wagon": [
+    {n:"Hand-Dipped Corn Dog", p:12.49, d:"Classic Main Street corn dog"},
+    {n:"Chips", p:4.49, d:"Side of chips"}
+  ],
+  "Bengal Barbecue": [
+    {n:"Bengal Beef Skewer", p:13.99, d:"Bacon-wrapped beef"},
+    {n:"Banyan Beef Skewer", p:13.99, d:"Teriyaki-style beef"},
+    {n:"Outback Vegetable Skewer", p:11.49, d:"Grilled veggie skewer"}
+  ],
+  "Milk Stand": [
+    {n:"Blue Milk", p:7.99, d:"Frozen plant-based slush"},
+    {n:"Green Milk", p:7.99, d:"Frozen plant-based slush"}
+  ],
+  "Docking Bay 7 Food and Cargo": [
+    {n:"Smoked Kaadu Ribs", p:19.99, d:"Pork ribs with slaw"},
+    {n:"Fried Endorian Tip-Yip", p:17.99, d:"Crispy chicken"},
+    {n:"Yobshrimp Noodle Salad", p:15.49, d:"Chilled shrimp noodles"}
+  ],
+  "Plaza Inn": [
+    {n:"Fried Chicken Dinner", p:24.99, d:"House fried chicken, sides"},
+    {n:"Pot Roast", p:24.99, d:"Classic comfort plate"}
+  ],
+  "Jolly Holiday Bakery Cafe": [
+    {n:"Matterhorn Macaroon", p:5.99, d:"Coconut macaroon"},
+    {n:"Seasonal Pastry", p:6.49, d:"Bakery case item"},
+    {n:"Coffee", p:5.49, d:"Joffrey’s coffee"}
+  ],
+  "Gibson Girl Ice Cream Parlor": [
+    {n:"Ice Cream Cone", p:6.99, d:"Single scoop"},
+    {n:"Sundae", p:8.99, d:"Ice cream sundae"}
+  ],
+  "Edelweiss Snacks": [
+    {n:"Jumbo Pretzel", p:8.99, d:"Bavarian-style pretzel"},
+    {n:"Chimichanga", p:11.49, d:"Handheld snack"}
+  ],
+  "Hungry Bear Barbecue Jamboree": [
+    {n:"Barbecue Sampler", p:19.99, d:"Smoked meats and sides"},
+    {n:"Pulled Pork Sandwich", p:16.49, d:"Classic BBQ sandwich"}
+  ],
+  "Alien Pizza Planet Express": [
+    {n:"Pepperoni Pizza Slice", p:9.99, d:"Personal slice"},
+    {n:"Cheese Pizza Slice", p:8.99, d:"Personal slice"}
+  ],
+  "Galactic Grill": [
+    {n:"Cheeseburger", p:14.49, d:"Classic burger"},
+    {n:"Chicken Tenders", p:13.99, d:"Crispy tenders"}
+  ],
+  "Carnation Café": [
+    {n:"Chef’s Salad", p:16.99, d:"House salad"},
+    {n:"Breakfast Plate", p:18.99, d:"When breakfast is served"},
+    {n:"Dessert", p:8.99, d:"Café dessert"}
+  ],
+  "Cafe Orleans": [
+    {n:"Monte Cristo", p:21.99, d:"Classic fried sandwich"},
+    {n:"Gumbo", p:12.99, d:"Cup of gumbo"},
+    {n:"Pommes Frites", p:8.99, d:"Seasoned fries"}
+  ],
+  "Blue Bayou Restaurant": [
+    {n:"Gumbo", p:14.99, d:"Starter"},
+    {n:"Seasonal Entrée", p:42.00, d:"Table-service plate"},
+    {n:"Monte Cristo", p:29.00, d:"When offered"}
+  ],
+  "Oga's Cantina at the Disneyland Resort": [
+    {n:"Fuzzy Tauntaun", p:16.00, d:"Specialty drink"},
+    {n:"Jedi Mind Trick", p:16.00, d:"Specialty drink"},
+    {n:"Non-Alcoholic Concoction", p:8.50, d:"Cantina mocktail"}
+  ],
+  "Red Rose Taverne": [
+    {n:"Grey Stuff Cupcake", p:6.49, d:"Try the grey stuff"},
+    {n:"Gourmet Bacon Cheeseburger", p:15.49, d:"Burger plate"},
+    {n:"Tuna Melt", p:14.49, d:"Hot sandwich"}
+  ],
+  "Tiana’s Palace": [
+    {n:"Beignet Flight", p:12.99, d:"Warm beignets"},
+    {n:"Gumbo", p:12.99, d:"Bowl of gumbo"},
+    {n:"Po’ Boy", p:16.99, d:"New Orleans sandwich"}
+  ],
+  "Stage Door Café": [
+    {n:"Chicken Nuggets", p:12.49, d:"Nuggets and fries"},
+    {n:"Hand-Dipped Corn Dog", p:12.49, d:"Corn dog"},
+    {n:"Funnel Cake Fries", p:8.49, d:"Sweet snack"}
+  ],
+  "Refreshment Corner": [
+    {n:"All-Beef Hot Dog", p:10.49, d:"Classic dog"},
+    {n:"Chili Dog", p:11.49, d:"Chili topping"}
+  ],
+  "Mint Julep Bar": [
+    {n:"Mint Julep", p:5.99, d:"Non-alcoholic classic"},
+    {n:"Beignets", p:7.49, d:"Order of beignets"}
+  ],
+  "The Tropical Hideaway Express": [
+    {n:"Pork Belly Bao", p:9.49, d:"Steamed bao"},
+    {n:"Dole Whip", p:7.49, d:"Soft-serve"}
+  ],
+  "Harbour Galley": [
+    {n:"Chowder Bread Bowl", p:13.99, d:"Soup in sourdough"}
+  ],
+  "River Belle Terrace": [
+    {n:"Breakfast Skillet", p:19.99, d:"Morning plate"},
+    {n:"BBQ Plate", p:24.99, d:"Lunch/dinner plate"}
+  ],
+  "Aloha Isle": [
+    {n:"Dole Whip", p:5.99, d:"Pineapple soft-serve"},
+    {n:"Dole Whip Float", p:6.99, d:"Float"}
+  ],
+  "Cosmic Ray's Starlight Cafe": [
+    {n:"Angus Bacon Cheeseburger", p:14.79, d:"Burger plate"},
+    {n:"Chicken Sandwich", p:13.99, d:"Crispy or grilled"}
+  ],
+  "Pecos Bill Tall Tale Inn and Cafe": [
+    {n:"Fajita Platter", p:16.99, d:"Build-your-own"},
+    {n:"Nachos", p:13.99, d:"Loaded nachos"}
+  ],
+  "Columbia Harbour House": [
+    {n:"Fish", p:13.99, d:"Fried fish plate"},
+    {n:"New England Clam Chowder", p:8.99, d:"Cup of chowder"}
+  ],
+  "Casey’s Corner": [
+    {n:"Corn Dog Nuggets", p:11.99, d:"Bite-size corn dogs"},
+    {n:"Chili-Cheese Hot Dog", p:11.49, d:"Chili dog"}
+  ],
+  "Flame Tree Barbecue": [
+    {n:"Ribs", p:21.99, d:"Smoked ribs"},
+    {n:"Pulled Pork Sandwich", p:15.99, d:"BBQ sandwich"}
+  ],
+  "Satu'li Canteen": [
+    {n:"Bowl – Beef", p:17.99, d:"Custom bowl"},
+    {n:"Bowl – Chicken", p:16.99, d:"Custom bowl"},
+    {n:"Bowl – Vegetable", p:15.99, d:"Plant-based bowl"}
+  ],
+  "Connections Eatery": [
+    {n:"Cheeseburger", p:14.49, d:"Burger"},
+    {n:"Impossible Burger", p:15.49, d:"Plant-based"}
+  ],
+  "Woody's Lunch Box": [
+    {n:"Smoked Turkey Sandwich", p:13.99, d:"Lunch sandwich"},
+    {n:"Grilled Three-Cheese", p:11.99, d:"Grilled cheese"},
+    {n:"Lunch Box Tart", p:6.99, d:"Giant pop-tart"}
+  ],
+  "Three Broomsticks": [
+    {n:"Fish and Chips", p:16.99, d:"Pub plate"},
+    {n:"Rotisserie Chicken", p:18.99, d:"Chicken platter"},
+    {n:"Butterbeer", p:8.49, d:"Frozen or cold"}
+  ],
+  "Leaky Cauldron": [
+    {n:"Fish and Chips", p:16.99, d:"Pub plate"},
+    {n:"Bangers and Mash", p:17.99, d:"Sausage platter"},
+    {n:"Butterbeer", p:8.49, d:"Frozen or cold"}
+  ],
+  "Toadstool Cafe": [
+    {n:"Piranha Plant Caprese", p:14.99, d:"Themed plate"},
+    {n:"Mario Burger", p:16.99, d:"Themed burger"}
+  ],
+  "defaultQuick": [
+    {n:"Churro", p:6.49, d:"Cinnamon sugar churro"},
+    {n:"Popcorn", p:7.00, d:"Box or souvenir bucket"},
+    {n:"Mickey Pretzel", p:8.99, d:"Soft pretzel"},
+    {n:"Pickle", p:5.49, d:"Oversized pickle"},
+    {n:"Bottled Water", p:5.49, d:"Dasani or similar"},
+    {n:"Fountain Soda", p:5.49, d:"Soft drink"},
+    {n:"Bottled Soda", p:5.49, d:"Coke, Sprite, etc."},
+    {n:"Joffrey’s Coffee", p:5.49, d:"Hot coffee"},
+    {n:"Frozen Slush / Lemonade", p:6.49, d:"Icy park drink"},
+    {n:"Ice Cream Bar", p:6.99, d:"Novelty bar"},
+    {n:"Turkey Leg", p:14.99, d:"Giant smoked turkey leg"},
+    {n:"Hot Dog", p:9.99, d:"All-beef hot dog"},
+    {n:"Chicken Tenders", p:13.99, d:"Tenders with fries"},
+    {n:"French Fries", p:5.99, d:"Side of fries"}
+  ]
+};
+
+let destinations=[], view="home", mode=null, currentPark=null, currentFood=null;
+let hoursCache={}, weatherCache={}, cart=[];
+
+function esc(s){ return String(s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+function waitClass(m){ if(m==null) return "z"; if(m<=15) return "g"; if(m<=40) return "y"; return "r"; }
+function formatWait(m){ return m==null ? "—" : m+" min"; }
+function formatTime(iso){
+  if(!iso) return "—";
+  try { return new Date(iso).toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}); } catch { return "—"; }
+}
+function weatherText(code){
+  const m={0:"Clear",1:"Mostly clear",2:"Partly cloudy",3:"Overcast",45:"Fog",61:"Rain",63:"Rain",65:"Heavy rain",80:"Showers",95:"Storms"};
+  return m[code]||"—";
+}
+function landFor(parkId, name){
+  const raw=(name||"").toLowerCase();
+  const n=raw.replace(/[^a-z0-9&\s]/g," "); // ignore commas/punctuation in titles
+  const groups=LANDS[parkId];
+  if(groups){
+    for(const [land, keys] of groups){
+      if(keys.some(k=>{
+        const kk=k.toLowerCase();
+        return n.includes(kk) || raw.includes(kk);
+      })) return land;
+    }
+  }
+  return "More around the park";
+}
+function menuFor(name){
+  const lower=(name||"").toLowerCase();
+  if(MENUS[name] && name!=="defaultQuick") return MENUS[name];
+  const keys=Object.keys(MENUS).filter(k=>k!=="defaultQuick");
+  const hit=keys.find(k=>{
+    const kL=k.toLowerCase();
+    return lower.includes(kL) || kL.includes(lower) ||
+      lower.replace(/['’]/g,"").includes(kL.replace(/['’]/g,""));
+  });
+  return hit ? MENUS[hit] : [];
+}
+
+function showLoading(msg){ document.getElementById("app").innerHTML = `<div class="loading"><div class="spin"></div>${esc(msg||"Loading…")}</div>`; }
+function showError(msg){ document.getElementById("app").innerHTML = `<div class="hero"><h2>Couldn’t load</h2><p>${esc(msg)}</p></div><button class="icon-btn" onclick="loadHome()">Try again</button>`; }
+
+function renderHome(){
+  view="home"; mode=null; currentPark=null;
+  document.getElementById("backBtn").style.display="none";
+  document.getElementById("refreshBtn").style.display="none";
+  document.getElementById("pageTitle").textContent="Park Day";
+  const dmgSub=getAccount()?("Saved for "+esc(getAccount().name)):"Snap receipts · track the day";
+  document.getElementById("app").innerHTML = `
+    <div class="home-hero">
+      <h2>Park Day</h2>
+      <p>Waits, spending, and your trip — three taps.</p>
+    </div>
+    <div class="home-stack">
+      <button type="button" class="home-btn" onclick="showParkList('waits')">
+        <div class="home-emoji">🎢</div>
+        <div class="home-label">Ride waits</div>
+        <div class="home-hint">Live times by land</div>
+      </button>
+      <button type="button" class="home-btn" onclick="openDamages()">
+        <div class="home-emoji">💸</div>
+        <div class="home-label">Daily Damages</div>
+        <div class="home-hint">${dmgSub}</div>
+      </button>
+      <button type="button" class="home-btn" onclick="openAccount()">
+        <div class="home-emoji">👤</div>
+        <div class="home-label">Trip account</div>
+        <div class="home-hint">${accountHomeSub()}</div>
+      </button>
+    </div>`;
+}
+
+function showParkList(m){
+  mode=m; view="list";
+  document.getElementById("backBtn").style.display="block";
+  document.getElementById("refreshBtn").style.display="none";
+  document.getElementById("pageTitle").textContent = m==="waits"?"Ride waits":"Food & carts";
+  const sorted=[...destinations].sort((a,b)=>{
+    const ai=PRIORITY.indexOf(a.slug), bi=PRIORITY.indexOf(b.slug);
+    if(ai!==-1&&bi!==-1) return ai-bi; if(ai!==-1) return -1; if(bi!==-1) return 1;
+    return a.name.localeCompare(b.name);
+  });
+  let html=`<input class="search" id="search" placeholder="Search parks…" oninput="filterParks()">`;
+  for(const dest of sorted){
+    html+=`<div class="section">${esc(dest.name)}</div><div class="park-grid">`;
+    for(const park of dest.parks){
+      const click = m==="food"
+        ? `openPark('${park.id}','${esc(park.name).replace(/'/g,"\\'")}','food')`
+        : `openPark('${park.id}','${esc(park.name).replace(/'/g,"\\'")}','waits')`;
+      html+=`<div class="park-card" data-name="${esc((park.name+" "+dest.name).toLowerCase())}" onclick="${click}">
+        <div><div class="title">${esc(park.name)}</div><div class="sub">${esc(dest.name)}</div></div>
+        <div>›</div>
+      </div>`;
+    }
+    html+=`</div>`;
+  }
+  document.getElementById("app").innerHTML=html;
+}
+
+function filterParks(){
+  const q=(document.getElementById("search")?.value||"").toLowerCase().trim();
+  document.querySelectorAll(".park-card").forEach(c=>c.style.display=(!q||c.dataset.name.includes(q))?"flex":"none");
+}
+
+async function prefetchHours(sorted){
+  const parks=[];
+  for(const d of sorted.slice(0,4)) parks.push(...d.parks);
+  await Promise.all(parks.slice(0,16).map(async p=>{
+    const hrs=await getHours(p.id);
+    const el=document.getElementById("hrs-"+p.id);
+    if(el && hrs) el.innerHTML=`<b>${esc(hrs.label)}</b><span>${esc(hrs.range)}</span>`;
+  }));
+}
+
+async function getHours(parkId){
+  if(hoursCache[parkId] && Date.now()-hoursCache[parkId].ts<10*60*1000) return hoursCache[parkId].data;
+  try{
+    const res=await fetch(`${API}/entity/${parkId}/schedule`);
+    if(!res.ok) return null;
+    const data=await res.json();
+    const today=new Date().toISOString().slice(0,10);
+    const entry=(data.schedule||[]).find(s=>s.date===today) || (data.schedule||[])[0];
+    const info = entry ? {
+      label: entry.type==="OPERATING"?"Open today":(entry.type||"Hours"),
+      range: `${formatTime(entry.openingTime)} – ${formatTime(entry.closingTime)}`,
+      schedule: data.schedule||[]
+    } : null;
+    hoursCache[parkId]={ts:Date.now(), data:info};
+    return info;
+  }catch{return null;}
+}
+
+async function getWeather(parkId){
+  if(weatherCache[parkId] && Date.now()-weatherCache[parkId].ts<10*60*1000) return weatherCache[parkId].data;
+  const c=PARK_COORDS[parkId]; if(!c) return null;
+  try{
+    const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c[0]}&longitude=${c[1]}&current=temperature_2m,weather_code,apparent_temperature,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph`);
+    if(!res.ok) return null;
+    const data=await res.json();
+    weatherCache[parkId]={ts:Date.now(), data}; return data;
+  }catch{return null;}
+}
+
+async function openPark(parkId, parkName, kind){
+  view=kind; currentPark={id:parkId,name:parkName};
+  document.getElementById("backBtn").style.display="block";
+  document.getElementById("refreshBtn").style.display="block";
+  document.getElementById("pageTitle").textContent=parkName;
+  showLoading(kind==="food"?"Loading food spots…":"Loading live waits…");
+  try{
+    const [liveRes, childRes, weather] = await Promise.all([
+      fetch(`${API}/entity/${parkId}/live`),
+      fetch(`${API}/entity/${parkId}/children`),
+      getWeather(parkId)
+    ]);
+    if(!liveRes.ok) throw new Error("live");
+    const live=await liveRes.json();
+    const children=childRes.ok ? await childRes.json() : {children:[]};
+    if(kind==="food") renderFood(live, children, weather);
+    else renderRides(live, weather);
+  }catch(e){
+    showError("Could not load this park right now.");
+    console.error(e);
+  }
+}
+
+function weatherBar(w){
+  if(!w?.current) return "";
+  return `<div class="weather"><div><div class="temp">${Math.round(w.current.temperature_2m)}°</div>
+    <div class="sub">${weatherText(w.current.weather_code)} · Feels ${Math.round(w.current.apparent_temperature)}°</div></div></div>`;
+}
+
+
+const DL_ID="7340550b-c14d-4def-80bb-acdb51d49a66";
+const DCA_ID="832fcd51-ea19-4e77-85c7-75d5843b127c";
+
+const LAND_MAP_COLORS={
+  // Disneyland
+  "Main Street, U.S.A.":"#f0a85a",
+  "Adventureland":"#4caf6a",
+  "New Orleans Square":"#a878e0",
+  "Bayou Country":"#8fd48c",
+  "Frontierland":"#f0c05a",
+  "Fantasyland":"#f0a0c8",
+  "Mickey's Toontown":"#6eb0ff",
+  "Tomorrowland":"#4ed4c8",
+  "Star Wars: Galaxy's Edge":"#c0c8d4",
+  // DCA
+  "Buena Vista Street":"#ff9e4a",
+  "Hollywood Land":"#c080e0",
+  "Avengers Campus":"#90d0ff",
+  "Cars Land":"#ff6b5c",
+  "Pacific Wharf":"#6ed4c8",
+  "Paradise Gardens Park":"#70c868",
+  "Pixar Pier":"#ff9ec8",
+  "Grizzly Peak":"#b8885a",
+  "San Fransokyo Square":"#e0cc9a"
+};
+
+function landMapSvg(parkId, activeLand){
+  const stroke="#f0ecf8";
+  const dim="rgba(240,236,248,.55)";
+  function poly(name, points){
+    const on=name===activeLand;
+    const fill=on?(LAND_MAP_COLORS[name]||"#b794f6"):"none";
+    const sw=on?1.4:1;
+    const op=on?1:.55;
+    return `<polygon points="${points}" fill="${fill}" stroke="${on?stroke:dim}" stroke-width="${sw}" opacity="${op}" stroke-linejoin="round"/>`;
+  }
+  if(parkId===DL_ID){
+    // Schematic Disneyland: entrance/Main Street south, hub center, lands around
+    const parts=[
+      poly("Main Street, U.S.A.","92,168 108,168 112,212 88,212"),
+      poly("Adventureland","48,128 88,122 92,152 52,158"),
+      poly("New Orleans Square","18,108 52,102 56,138 22,144"),
+      poly("Bayou Country","8,72 42,68 48,102 12,108"),
+      poly("Frontierland","42,78 88,72 92,118 48,124"),
+      poly("Star Wars: Galaxy's Edge","12,18 68,12 78,68 22,74"),
+      poly("Fantasyland","78,42 128,38 134,98 84,104"),
+      poly("Mickey's Toontown","88,6 122,4 126,38 90,40"),
+      poly("Tomorrowland","128,88 182,82 188,148 134,156"),
+    ];
+    // faint hub circle
+    const hub=`<circle cx="100" cy="140" r="10" fill="none" stroke="${dim}" stroke-width="1"/>`;
+    return `<svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${hub}${parts.join("")}</svg>`;
+  }
+  if(parkId===DCA_ID){
+    // Schematic DCA: Buena Vista north, Hollywood NE, Avengers E, Cars SE,
+    // Pixar Pier SW, Paradise S, Grizzly center, Wharf/San Fransokyo W
+    const parts=[
+      poly("Buena Vista Street","78,8 122,8 128,42 72,42"),
+      poly("Hollywood Land","128,12 188,18 184,78 124,68"),
+      poly("Avengers Campus","130,72 186,82 182,128 126,118"),
+      poly("Cars Land","128,130 186,138 178,198 118,188"),
+      poly("Pixar Pier","18,148 78,142 88,198 22,204"),
+      poly("Paradise Gardens Park","78,148 122,142 118,188 84,192"),
+      poly("Grizzly Peak","72,68 124,62 128,118 76,124"),
+      poly("Pacific Wharf","18,78 68,72 74,118 22,124"),
+      poly("San Fransokyo Square","22,48 72,44 70,78 24,82"),
+    ];
+    return `<svg viewBox="0 0 200 210" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${parts.join("")}</svg>`;
+  }
+  return "";
+}
+
+function landHeaderHtml(parkId, land){
+  const map=landMapSvg(parkId, land);
+  if(!map) return `<div class="land">${esc(land)}</div>`;
+  return `<div class="land-head"><div class="land">${esc(land)}</div><div class="land-map">${map}</div></div>`;
+}
+
+function renderRides(live, weather){
+  const rides=(live.liveData||[]).filter(e=>e.entityType==="ATTRACTION").map(e=>{
+    const standby=e.queue?.STANDBY?.waitTime ?? null;
+    const single=e.queue?.SINGLE_RIDER?.waitTime ?? null;
+    const rt=e.queue?.RETURN_TIME || e.queue?.PAID_RETURN_TIME;
+    let ll=null;
+    if(rt){
+      if(rt.state==="AVAILABLE"||rt.returnStart){
+        const s=formatTime(rt.returnStart), en=formatTime(rt.returnEnd);
+        ll = s && s!=="—" ? (en && en!=="—" ? `${s} – ${en}` : s) : "Available";
+      } else if(rt.state==="FINISHED") ll="Sold out";
+    }
+    return {id:e.id,name:e.name,status:e.status,standby,single,ll,land:landFor(currentPark.id,e.name)};
+  });
+  const groups={};
+  for(const r of rides){ (groups[r.land] ||= []).push(r); }
+  Object.values(groups).forEach(list=>list.sort((a,b)=>a.name.localeCompare(b.name)));
+  const order=Object.keys(groups).sort((a,b)=> a==="More around the park"?1:b==="More around the park"?-1:a.localeCompare(b));
+
+  let html=weatherBar(weather);
+  html+=`<div class="legend"><span><span class="dot" style="background:var(--green)"></span>1–15</span><span><span class="dot" style="background:var(--yellow)"></span>16–40</span><span><span class="dot" style="background:var(--red)"></span>41+</span></div>`;
+  for(const land of order){
+    html+=landHeaderHtml(currentPark.id, land);
+    for(const r of groups[land]){
+      const open=r.status==="OPERATING";
+      html+=`<div class="item-card"><div><div class="title">${esc(r.name)}</div>
+        ${!open?`<div class="sub">${esc(r.status||"Closed")}</div>`:""}
+        ${open&&r.single!=null?`<div class="sub">Single rider ${r.single} min</div>`:""}</div>
+        <div><div class="wait ${open?waitClass(r.standby):"z"}">${open?formatWait(r.standby):esc(r.status||"Closed")}</div>
+        ${r.ll?`<div class="ll">LL ${esc(r.ll)}</div>`:""}</div></div>`;
+    }
+  }
+  html+=`<div class="note">Updated ${new Date().toLocaleTimeString()}</div>`;
+  document.getElementById("app").innerHTML=html;
+}
+
+function renderFood(live, children, weather){
+  const liveMap={};
+  for(const e of (live.liveData||[])){
+    if(e.entityType==="RESTAURANT") liveMap[e.id]=e;
+  }
+  let raw=(children.children||[]).filter(c=>c.entityType==="RESTAURANT");
+  if(!raw.length) raw=(live.liveData||[]).filter(e=>e.entityType==="RESTAURANT");
+  const spots=raw.map(c=>{
+    const l=liveMap[c.id];
+    return {
+      id:c.id, name:c.name, status:l?.status || "UNKNOWN",
+      dining:l?.diningAvailability || null,
+      land:landFor(currentPark.id,c.name)
+    };
+  }).sort((a,b)=>a.name.localeCompare(b.name));
+  const groups={};
+  for(const s of spots){ (groups[s.land] ||= []).push(s); }
+  const order=Object.keys(groups).sort((a,b)=> a==="More around the park"?1:b==="More around the park"?-1:a.localeCompare(b));
+
+  let html=weatherBar(weather);
+  html+=`<div class="note" style="text-align:left;margin:0 0 12px">Tap a spot to see items for that location only.</div>`;
+  if(!spots.length) html+=`<div class="loading">No dining locations listed for this park.</div>`;
+  for(const land of order){
+    html+=landHeaderHtml(currentPark.id, land);
+    for(const s of groups[land]){
+      html+=`<div class="item-card" onclick='openMenu(${JSON.stringify({id:s.id,name:s.name}).replace(/'/g,"&#39;")})'>
+        <div><div class="title">${esc(s.name)}</div></div>
+        <div style="color:var(--muted)">›</div></div>`;
+    }
+  }
+  html+=renderCart();
+  document.getElementById("app").innerHTML=html;
+}
+
+function openMenu(spot){
+  view="menu"; currentFood=spot;
+  document.getElementById("pageTitle").textContent=spot.name;
+  document.getElementById("refreshBtn").style.display="none";
+  const items=menuFor(spot.name);
+  const q=encodeURIComponent(spot.name);
+  let html=`<div class="hero"><h2>${esc(spot.name)}</h2><p>${items.length? "Menu for this location only." : "No saved menu yet for this exact name — use the links or add from the board."}</p></div>`;
+  for(const it of items){
+    html+=`<div class="menu-row"><div><div class="title">${esc(it.n)}</div><div class="sub">${esc(it.d)} · $${it.p.toFixed(2)}</div></div>
+      <button class="add-btn" onclick='addCart(${JSON.stringify(it).replace(/'/g,"&#39;")})'>+ Add</button></div>`;
+  }
+  html+=`<div class="menu-row"><div><div class="title">Custom item</div><div class="sub">Type any extra snack</div></div></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <input class="search" id="customName" placeholder="Item name" style="margin:0">
+      <input class="search" id="customPrice" placeholder="Price" type="number" step="0.01" style="margin:0;width:110px">
+      <button class="add-btn" onclick="addCustom()">Add</button>
+    </div>
+    <a href="https://www.google.com/search?q=${q}+Disneyland+menu+prices" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:12px;padding:11px;border-radius:12px;background:var(--accent);color:#fff;text-decoration:none;font-weight:700">Official / AllEars menu →</a>
+    <a href="https://www.thrill-data.com/disney-menus/dlr" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:8px;color:var(--accent);font-size:.85rem">Thrill Data full DLR menus</a>`;
+  html+=renderCart();
+  document.getElementById("app").innerHTML=html;
+}
+
+function addCart(item){
+  cart.push({n:item.n,p:item.p,place:currentFood?.name||""});
+  const el=document.getElementById("cartBox");
+  if(el) el.outerHTML=renderCart();
+  else openMenu(currentFood);
+}
+function addCustom(){
+  const n=document.getElementById("customName")?.value.trim();
+  const p=parseFloat(document.getElementById("customPrice")?.value);
+  if(!n || isNaN(p)) return;
+  addCart({n,p});
+}
+function clearCart(){ cart=[]; const el=document.getElementById("cartBox"); if(el) el.outerHTML=renderCart(); }
+function renderCart(){
+  const total=cart.reduce((s,i)=>s+i.p,0);
+  return `<div class="cart" id="cartBox"><div style="display:flex;justify-content:space-between;align-items:center">
+    <div><div class="kicker">Food calculator</div><b>${cart.length} item${cart.length===1?"":"s"} · $${total.toFixed(2)}</b></div>
+    <button class="icon-btn" onclick="clearCart()">Clear</button></div>
+    ${cart.slice(-4).map(i=>`<div class="sub">${esc(i.n)} · $${i.p.toFixed(2)}</div>`).join("")}
+  </div>`;
+}
+
+const SYNC_BASE = "https://park-day-sync.zaylow86.workers.dev";
+function acctKey(){ return "parkday-account"; }
+function getAccount(){ try{ return JSON.parse(localStorage.getItem(acctKey())||"null"); }catch{ return null; } }
+function setAccount(a){ localStorage.setItem(acctKey(), JSON.stringify(a)); }
+function clearAccount(){ localStorage.removeItem(acctKey()); localStorage.removeItem("parkday-expires"); }
+function setExpiresAt(iso){ if(iso) localStorage.setItem("parkday-expires", iso); else localStorage.removeItem("parkday-expires"); }
+function getExpiresAt(){ return localStorage.getItem("parkday-expires")||""; }
+function daysLeft(){
+  const exp=getExpiresAt();
+  if(!exp) return null;
+  const ms=new Date(exp).getTime()-Date.now();
+  if(Number.isNaN(ms)) return null;
+  return Math.max(0, Math.ceil(ms/(24*60*60*1000)));
+}
+function accountHomeSub(){
+  const a=getAccount();
+  if(!a) return "Join or create";
+  const d=daysLeft();
+  if(d!=null) return esc(a.name)+" · "+d+" day"+(d===1?"":"s")+" left";
+  return "Signed in as "+esc(a.name);
+}
+function formatGoodUntil(iso){
+  try{
+    const d=new Date(iso);
+    if(Number.isNaN(d.getTime())) return "";
+    return d.toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"});
+  }catch{ return ""; }
+}
+function storeKey(){ const a=getAccount(); return a ? "parkday-store-"+a.name.toLowerCase()+"-"+a.pin : "parkday-store-guest"; }
+function loadStore(){ try{ return JSON.parse(localStorage.getItem(storeKey())||"{}"); }catch{ return {}; } }
+function saveStore(s){ localStorage.setItem(storeKey(), JSON.stringify(s)); }
+function dayId(){ return new Date().toISOString().slice(0,10); }
+const FX_FALLBACK={USD:1,CAD:1.40,EUR:0.87,GBP:0.75,MXN:17.2,JPY:157,AUD:1.40,NZD:1.55,CHF:0.80};
+let FX=Object.assign({},FX_FALLBACK);
+let fxMeta={source:"fallback",updated:null};
+const CURRENCIES=["USD","CAD","EUR","GBP","MXN","JPY","AUD","NZD","CHF"];
+const FX_CACHE_KEY="parkday-fx";
+function loadFxCache(){
+  try{
+    const raw=JSON.parse(localStorage.getItem(FX_CACHE_KEY)||"null");
+    if(raw&&raw.rates&&typeof raw.rates==="object"){
+      CURRENCIES.forEach(c=>{
+        if(c==="USD"){ FX.USD=1; return; }
+        if(raw.rates[c]!=null) FX[c]=+raw.rates[c];
+      });
+      FX.USD=1;
+      fxMeta={source:"cached",updated:raw.updated||null};
+      return true;
+    }
+  }catch{}
+  return false;
+}
+loadFxCache();
+function getDisplayCurrency(){ return localStorage.getItem("parkday-display-currency")||"USD"; }
+function setDisplayCurrency(c){ localStorage.setItem("parkday-display-currency",c||"USD"); }
+function getConvertCurrency(){
+  const c=localStorage.getItem("parkday-convert-currency")||"CAD";
+  return CURRENCIES.includes(c)?c:"CAD";
+}
+function setConvertCurrency(c){ localStorage.setItem("parkday-convert-currency",CURRENCIES.includes(c)?c:"CAD"); }
+function convertAmount(amount,fromCur,toCur){
+  const f=FX[fromCur]||1, t=FX[toCur]||1;
+  return (+amount||0)/f*t;
+}
+function fmtFxStamp(isoOrUtc){
+  if(!isoOrUtc) return "";
+  try{
+    const d=new Date(isoOrUtc);
+    if(Number.isNaN(d.getTime())){
+      return String(isoOrUtc).replace(/^\w+,\s*/,"").replace(/\s+\+\d{4}$/,"").slice(0,18).trim();
+    }
+    return d.toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
+  }catch{ return ""; }
+}
+function fxStatusLine(){
+  const stamp=fmtFxStamp(fxMeta.updated);
+  if(fxMeta.source==="live") return "Live rates"+(stamp?" · updated "+stamp:"");
+  if(fxMeta.source==="cached") return "Cached rates"+(stamp?" · "+stamp:"");
+  return "Fallback rates · approx";
+}
+async function ensureFxRates(){
+  try{
+    const res=await fetch("https://open.er-api.com/v6/latest/USD");
+    if(!res.ok) throw new Error("fx http");
+    const data=await res.json();
+    if(data.result!=="success"||!data.rates) throw new Error("fx bad");
+    const next={USD:1};
+    CURRENCIES.forEach(c=>{
+      if(c==="USD") return;
+      if(data.rates[c]!=null) next[c]=+data.rates[c];
+      else next[c]=FX[c]!=null?FX[c]:FX_FALLBACK[c];
+    });
+    Object.assign(FX,next);
+    const updated=data.time_last_update_utc||new Date().toISOString();
+    fxMeta={source:"live",updated};
+    try{ localStorage.setItem(FX_CACHE_KEY, JSON.stringify({rates:Object.assign({},FX),updated})); }catch{}
+  }catch(e){
+    if(fxMeta.source==="fallback") loadFxCache();
+  }
+  return FX;
+}
+function fmtMoney(amount,cur){ return "$"+Number(amount||0).toFixed(2)+" "+(cur||"USD"); }
+function migrateItem(i){
+  if(!i||typeof i!=="object") return i;
+  return Object.assign({},i,{
+    currency:i.currency||"USD",
+    items:Array.isArray(i.items)?i.items:[]
+  });
+}
+function normalizeList(list){ return (list||[]).map(migrateItem); }
+function loadDamages(){ const s=loadStore(); return normalizeList(s[dayId()]||[]); }
+function saveDamages(list){ const s=loadStore(); s[dayId()]=normalizeList(list); saveStore(s); syncPush(dayId(), s[dayId()]); }
+function loadBudgets(){
+  const s=loadStore();
+  const b=s.__budgets;
+  return (b && typeof b==="object" && !Array.isArray(b)) ? b : {};
+}
+function saveBudget(day, budget){
+  const s=loadStore();
+  if(!s.__budgets || typeof s.__budgets!=="object" || Array.isArray(s.__budgets)) s.__budgets={};
+  if(budget==null){
+    delete s.__budgets[day];
+  }else{
+    const amount=Number(budget.amount);
+    if(!Number.isFinite(amount)) return;
+    const currency=CURRENCIES.includes(budget.currency)?budget.currency:(budget.currency||"USD");
+    s.__budgets[day]={ amount, currency: CURRENCIES.includes(currency)?currency:"USD" };
+  }
+  saveStore(s);
+  syncPush(day, normalizeList(s[day]||[]));
+}
+function dayKeys(store){
+  return Object.keys(store||{}).filter(k=>k!=="__budgets" && Array.isArray(store[k]));
+}
+function budgetRemainingDisplay(budget, spentDisp, disp){
+  if(!budget || !Number.isFinite(+budget.amount)) return null;
+  const budgetDisp=convertAmount(+budget.amount, budget.currency||"USD", disp);
+  return budgetDisp - (spentDisp||0);
+}
+function formatDayLabel(isoDay){
+  try{
+    const p=(isoDay||"").split("-").map(Number);
+    if(p.length<3||!p[0]) return isoDay||"";
+    const dt=new Date(p[0],p[1]-1,p[2]);
+    return dt.toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});
+  }catch{ return isoDay||""; }
+}
+function dayTotalDisplay(list,disp){
+  return normalizeList(list).reduce((s,i)=>s+convertAmount(i.amount,i.currency||"USD",disp),0);
+}
+function currencyOptions(selected){
+  return CURRENCIES.map(c=>`<option value="${c}"${c===selected?" selected":""}>${c}</option>`).join("");
+}
+function catIcon(cat){ return cat==="clothes"?"👕":cat==="food"?"🍿":"🧾"; }
+function parseReceiptText(text){
+  const rawLines=(text||"").split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  const lines=rawLines.map(l=>l.replace(/\s+/g," ").trim());
+  // Accept $186.90, $186.9, 186.90, and spaced OCR like $1 86.90 / $186 .90
+  const moneyGlobal=/(\$?)\s*((?:[0-9]\s*){1,5}(?:[.,]\s*[0-9]{1,2}))/g;
+  const moneyTest=/\$?\s*(?:[0-9]\s*){1,5}(?:[.,]\s*[0-9]{1,2})/;
+  const kwGrand=/\bgrand\s*total\b/i;
+  const kwTotalPaid=/\btotal\s*paid\b/i;
+  const kwPaid=/\bpaid\b/i;
+  const kwTotal=/\btotal\b/i;
+  const badKw=/\b(sub\s*total|subtotal|tax|tip|gratuity|suggested|change|cash\s*back|balance\s*due|amount\s*due)\b/i;
+  const isSubtotal=/\bsub\s*total\b|\bsubtotal\b/i;
+  const n=lines.length;
+  const candidates=[];
+  function normalizeMoneyToken(tok){
+    return String(tok||"").replace(/\s+/g,"").replace(",",".");
+  }
+  function extractAmounts(str){
+    const out=[];
+    if(!str) return out;
+    moneyGlobal.lastIndex=0;
+    let m;
+    while((m=moneyGlobal.exec(str))){
+      const v=parseFloat(normalizeMoneyToken(m[2]));
+      if(Number.isFinite(v)&&v>0) out.push({value:v, hasDollar:!!m[1]});
+    }
+    return out;
+  }
+  function focusScore(line, hasDollar){
+    if(isSubtotal.test(line)) return -999;
+    let score=0;
+    if(kwGrand.test(line) || kwTotalPaid.test(line)) score+=80;
+    else if(/\btotal\s+paid\b/i.test(line)) score+=80;
+    else if(kwPaid.test(line) && !/\bunpaid\b/i.test(line)) score+=60;
+    else if(kwTotal.test(line)) score+=50;
+    else return -999;
+    if(hasDollar) score+=10;
+    if(badKw.test(line) && !kwGrand.test(line) && !kwTotalPaid.test(line) && !kwPaid.test(line)) score-=40;
+    return score;
+  }
+  for(let i=0;i<n;i++){
+    const line=lines[i];
+    const hasFocus=kwGrand.test(line)||kwTotalPaid.test(line)||kwPaid.test(line)||(kwTotal.test(line)&&!isSubtotal.test(line));
+    if(!hasFocus) continue;
+    let amounts=extractAmounts(line);
+    if(!amounts.length){
+      for(let j=1;j<=3&&i+j<n;j++){
+        amounts=extractAmounts(lines[i+j]);
+        if(amounts.length) break;
+      }
+    }
+    amounts.forEach(a=>{
+      const sc=focusScore(line,a.hasDollar);
+      if(sc>-900) candidates.push({value:a.value, score:sc, lineIdx:i});
+    });
+  }
+  let total=null;
+  let kwScore=0;
+  if(candidates.length){
+    // Prefer keyword strength; do not boost bottom-of-page over a clear early TOTAL
+    candidates.sort((a,b)=>b.score!==a.score?b.score-a.score:b.lineIdx-a.lineIdx);
+    total=candidates[0].value;
+    kwScore=candidates[0].score;
+  }
+  function cleanMerchantLine(s){
+    return String(s||"")
+      .replace(/[¥€£¢©®™§†‡•·|\\/_^=~`<>{}[\]()]+/g," ")
+      .replace(/[^A-Za-z0-9 '&.,\-]/g," ")
+      .replace(/\s+/g," ")
+      .trim();
+  }
+  function looksLikeStoreName(s){
+    if(!s||s.length<2||s.length>48) return false;
+    if(moneyTest.test(s)) return false;
+    if(/^\d/.test(s)) return false;
+    if(/\b(total|subtotal|tax|receipt|invoice|tel|phone|www|http|thank|paid|grand|amount|balance|change|visa|mastercard|debit|credit)\b/i.test(s)) return false;
+    const letters=(s.match(/[A-Za-z]/g)||[]).length;
+    return letters>=3;
+  }
+  let merchant="";
+  const head=rawLines.slice(0,8).map(cleanMerchantLine).filter(Boolean);
+  // Prefer Psycho Bunny-style logo OCR (fragment + Bunny)
+  let hasPsycho=false, hasBunny=false;
+  for(const h of head){
+    if(/\bbunn?y\b/i.test(h)) hasBunny=true;
+    if(/psycho|psycht|psych|ps[yi]cho/i.test(h)) hasPsycho=true;
+  }
+  if(hasBunny && hasPsycho) merchant="Psycho Bunny";
+  else if(hasBunny){
+    // Join short adjacent fragments ending with Bunny
+    for(let i=0;i<head.length;i++){
+      if(/\bbunn?y\b/i.test(head[i])){
+        const prev=i>0?head[i-1]:"";
+        if(prev && prev.length<=12 && /[A-Za-z]{3,}/.test(prev) && !moneyTest.test(prev)){
+          const joined=cleanMerchantLine(prev+" "+head[i]);
+          if(/psycho|psycht|psych/i.test(joined)) merchant="Psycho Bunny";
+          else merchant=joined.replace(/\bpsycht\b/i,"Psycho").replace(/\bpsych\b/i,"Psycho");
+        }else{
+          merchant=head[i].replace(/\bbunn?y\b/i,"Bunny");
+        }
+        break;
+      }
+    }
+  }
+  if(!merchant){
+    for(let i=0;i<head.length;i++){
+      const a=head[i];
+      const b=head[i+1]||"";
+      // Join two short fragments into a store name
+      if(a.length<=14 && b.length<=14 && looksLikeStoreName(a) && looksLikeStoreName(b)){
+        const words=(a+" "+b).match(/[A-Za-z]{2,}/g)||[];
+        if(words.length>=2){
+          merchant=cleanMerchantLine(a+" "+b);
+          break;
+        }
+      }
+      const words=a.match(/[A-Za-z]{2,}/g)||[];
+      if(looksLikeStoreName(a) && (words.length>=2 || /\b[A-Za-z]{4,}\b/.test(a))){
+        merchant=a;
+        break;
+      }
+    }
+  }
+  if(!merchant){
+    for(const line of head){
+      if(looksLikeStoreName(line)){ merchant=line; break; }
+    }
+  }
+  return {total, merchant, kwScore};
+}
+let pendingPhoto="";
+function openAccount(){
+  view="account";
+  document.getElementById("backBtn").style.display="block";
+  document.getElementById("refreshBtn").style.display="none";
+  document.getElementById("pageTitle").textContent="Trip account";
+  const a=getAccount();
+  const exp=getExpiresAt();
+  const good=exp?formatGoodUntil(exp):"";
+  if(a){
+    document.getElementById("app").innerHTML=`
+    <div class="hero"><h2>You're signed in</h2>
+      <p>Anyone in the party uses the same <strong>last name</strong> + <strong>4-digit PIN</strong>. Your account lasts <strong>30 days</strong> from create, then sync clears.</p></div>
+    <input class="search" id="acctName" placeholder="Last name (ex: Houtstra)" value="${esc(a.name)}">
+    <input class="search" id="acctPin" placeholder="4-digit PIN" inputmode="numeric" maxlength="8" value="${esc(a.pin)}">
+    <button class="add-btn" onclick="rejoinTrip()">Save trip account</button>
+    <div class="note" style="margin-top:10px">${good?"Good until "+esc(good)+" · days sync across phones":"Days sync across phones automatically. Export/Import still works as a backup."}</div>
+    <button class="icon-btn" style="width:100%;margin-top:10px" onclick="if(confirm('Sign out on this phone? Days stay on the server until the account expires.')){clearAccount();renderHome();}">Sign out</button>
+    <button class="icon-btn" style="width:100%;margin-top:10px" onclick="exportTrip()">Export backup</button>
+    <label class="icon-btn" style="display:block;text-align:center;margin-top:8px">Import backup
+      <input type="file" accept="application/json" style="display:none" onchange="importTrip(this)">
+    </label>`;
+    return;
+  }
+  document.getElementById("app").innerHTML=`
+    <div class="hero"><h2>Trip account</h2>
+      <p>Share one <strong>last name</strong> + <strong>PIN</strong> with your party so Daily Damages sync across phones.</p></div>
+    <div class="section">Join active trip</div>
+    <input class="search" id="joinName" placeholder="Last name (ex: Houtstra)">
+    <input class="search" id="joinPin" placeholder="4-digit PIN" inputmode="numeric" maxlength="8">
+    <button class="add-btn" onclick="joinTrip()">Join</button>
+    <div class="section">Create trip</div>
+    <input class="search" id="createName" placeholder="Last name (ex: Houtstra)">
+    <input class="search" id="createPin" placeholder="Choose a 4-digit PIN" inputmode="numeric" maxlength="8">
+    <button class="add-btn" onclick="createTrip()">Create</button>
+    <div class="note" style="margin-top:10px">Data lasts <strong>30 days</strong> from create. After that the trip is wiped and you’ll need a new one.</div>
+    <label class="note" style="display:block;margin-top:14px;cursor:pointer"><a style="color:var(--accent)">Import backup</a>
+      <input type="file" accept="application/json" style="display:none" onchange="importTrip(this)">
+    </label>`;
+}
+async function postAccount(name,pin,action){
+  const res=await fetch(SYNC_BASE+"/account",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({name,pin,action})
+  });
+  return res;
+}
+async function finishAccountOk(name,pin,res){
+  setAccount({name,pin});
+  try{
+    const data=await res.json();
+    if(data&&data.expiresAt){
+      setExpiresAt(data.expiresAt);
+      const until=formatGoodUntil(data.expiresAt);
+      if(until) alert("Good until "+until);
+    }
+  }catch{}
+  try{ await syncPull(); }catch(e){ /* keep local */ }
+  renderHome();
+}
+async function doJoin(name,pin){
+  if(name.length<2 || pin.length<4){ alert("Need a last name and at least a 4-digit PIN."); return; }
+  try{
+    const res=await postAccount(name,pin,"join");
+    if(res.status===404){ alert("No active trip with that last name — create one instead."); return; }
+    if(res.status===401){ alert("Wrong PIN for that last name."); return; }
+    if(res.status===410){
+      clearAccount();
+      alert("That trip expired (30 days). Create a new one with the same last name + PIN if you like.");
+      openAccount();
+      return;
+    }
+    if(!res.ok){ alert("Could not join — try again."); return; }
+    await finishAccountOk(name,pin,res);
+  }catch(e){ alert("Could not reach sync — check connection and try again."); }
+}
+async function joinTrip(){
+  const name=(document.getElementById("joinName")?.value||"").trim();
+  const pin=(document.getElementById("joinPin")?.value||"").trim();
+  await doJoin(name,pin);
+}
+async function rejoinTrip(){
+  const name=(document.getElementById("acctName")?.value||"").trim();
+  const pin=(document.getElementById("acctPin")?.value||"").trim();
+  await doJoin(name,pin);
+}
+async function createTrip(){
+  const name=(document.getElementById("createName")?.value||"").trim();
+  const pin=(document.getElementById("createPin")?.value||"").trim();
+  if(name.length<2 || pin.length<4){ alert("Need a last name and at least a 4-digit PIN."); return; }
+  try{
+    const res=await postAccount(name,pin,"create");
+    if(res.status===409){ alert("That last name already has a trip — Join with the correct PIN, or pick another name."); return; }
+    if(res.status===401){ alert("Wrong PIN for that last name."); return; }
+    if(res.status===410){
+      clearAccount();
+      alert("That trip expired (30 days). Create again to start fresh.");
+      openAccount();
+      return;
+    }
+    if(!res.ok){ alert("Could not create — try again."); return; }
+    await finishAccountOk(name,pin,res);
+  }catch(e){ alert("Could not reach sync — check connection and try again."); }
+}
+async function syncPull(){
+  const a=getAccount();
+  if(!a) return null;
+  const q=new URLSearchParams({name:a.name,pin:a.pin});
+  const res=await fetch(SYNC_BASE+"/days?"+q.toString());
+  if(res.status===401){ alert("Wrong PIN for sync."); return null; }
+  if(res.status===410){
+    let exp="";
+    try{ const d=await res.json(); exp=d.expiresAt||""; }catch{}
+    clearAccount();
+    alert("This trip expired"+(exp?" on "+formatGoodUntil(exp):"")+". Sign in again to start a new 30-day account.");
+    openAccount();
+    return null;
+  }
+  if(!res.ok) throw new Error("pull");
+  const data=await res.json();
+  if(data&&data.expiresAt) setExpiresAt(data.expiresAt);
+  if(data&&data.store&&typeof data.store==="object"){
+    const local=loadStore();
+    const merged=Object.assign({}, local, data.store);
+    Object.keys(merged).forEach(k=>{ if(Array.isArray(merged[k])) merged[k]=normalizeList(merged[k]); });
+    if(local.__budgets && typeof local.__budgets==="object") merged.__budgets=Object.assign({}, local.__budgets);
+    if(data.budgets && typeof data.budgets==="object"){
+      merged.__budgets=Object.assign({}, merged.__budgets||{}, data.budgets);
+    }
+    saveStore(merged);
+  }else if(data&&data.budgets&&typeof data.budgets==="object"){
+    const s=loadStore();
+    s.__budgets=Object.assign({}, s.__budgets||{}, data.budgets);
+    saveStore(s);
+  }
+  return data;
+}
+async function syncPush(day, items){
+  const a=getAccount();
+  if(!a) return;
+  try{
+    const payload={name:a.name,pin:a.pin,day,items};
+    const b=loadBudgets()[day];
+    if(b && Number.isFinite(+b.amount)) payload.budget={amount:+b.amount, currency:b.currency||"USD"};
+    const res=await fetch(SYNC_BASE+"/days",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(payload)
+    });
+    if(res.status===410){
+      /* expire gently on push — next pull/save will clear UI */
+      return;
+    }
+    if(res.ok){
+      try{
+        const data=await res.json();
+        if(data&&data.expiresAt) setExpiresAt(data.expiresAt);
+      }catch{}
+    }
+  }catch(e){ /* offline ok */ }
+}
+function exportTrip(){
+  const blob=new Blob([JSON.stringify({account:getAccount(),store:loadStore()},null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=(getAccount()?.name||"trip")+"-damages.json";
+  a.click();
+}
+function importTrip(input){
+  const f=input.files&&input.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const data=JSON.parse(r.result);
+      if(data.account) setAccount(data.account);
+      if(data.store) saveStore(data.store);
+      alert("Imported."); renderHome();
+    }catch{ alert("Could not read that file."); }
+  };
+  r.readAsText(f);
+}
+function openDamages(){
+  if(!getAccount()){ openAccount(); return; }
+  view="damages";
+  document.getElementById("backBtn").style.display="block";
+  document.getElementById("refreshBtn").style.display="none";
+  document.getElementById("pageTitle").textContent="Daily Damages";
+  drawDamages();
+  ensureFxRates().then(()=>{ if(view==="damages") drawDamages(); }).catch(()=>{});
+  if(getAccount()){
+    syncPull().then(()=>{ if(view==="damages") drawDamages(); }).catch(()=>{});
+  }
+}
+function drawDamages(){
+  const disp=getDisplayCurrency();
+  const list=loadDamages();
+  const total=dayTotalDisplay(list,disp);
+  const by={food:0,clothes:0,other:0};
+  list.forEach(i=>{ const k=by[i.cat]!=null?i.cat:"other"; by[k]+=convertAmount(i.amount,i.currency||"USD",disp); });
+  const today=dayId();
+  const budget=loadBudgets()[today];
+  const remaining=budgetRemainingDisplay(budget, total, disp);
+  let budgetBanner="";
+  if(remaining!=null){
+    if(remaining>=0) budgetBanner=`<p class="budget-left">Budget left ${fmtMoney(remaining,disp)}</p>`;
+    else budgetBanner=`<p class="budget-over">Over by ${fmtMoney(-remaining,disp)}</p>`;
+  }else{
+    budgetBanner=`<p class="budget-prompt">Set a budget to track what's left · spent ${fmtMoney(total,disp)}</p>`;
+  }
+  const budAmt=budget&&Number.isFinite(+budget.amount)?String(+budget.amount):"";
+  const totalUsd=dayTotalDisplay(list,"USD");
+  const convCur=getConvertCurrency();
+  const convAmt=convertAmount(totalUsd,"USD",convCur);
+  const convertLine=convCur==="USD"
+    ? `<p class="fx-convert">same · ${totalUsd.toFixed(2)} USD</p>`
+    : `<p class="fx-convert">${totalUsd.toFixed(2)} USD ≈ <span class="fx-amount">${convAmt.toFixed(2)} ${esc(convCur)}</span></p>`;
+  let html=`<div class="hero"><h2>${fmtMoney(total,disp)}</h2><p>Today so far · Food ${fmtMoney(by.food,disp)} · Clothes ${fmtMoney(by.clothes,disp)} · Other ${fmtMoney(by.other,disp)}</p>
+    ${budgetBanner}
+    ${convertLine}
+    <p style="margin-top:6px;font-size:.75rem;color:var(--muted)">Live rates · updates about once a day</p>
+    <p style="margin-top:8px;font-size:.72rem;color:var(--muted);line-height:1.4">All totals and exchange rates are estimates for budgeting purposes only.</p></div>
+    <div class="fx-row"><label for="convertCurrency">See as</label>
+      <select id="convertCurrency" onchange="setConvertCurrency(this.value);drawDamages()">${currencyOptions(convCur)}</select>
+    </div>
+    <div class="fx-row"><label for="displayCurrency">Show totals as</label>
+      <select id="displayCurrency" onchange="setDisplayCurrency(this.value);drawDamages()">${currencyOptions(disp)}</select>
+    </div>
+    <div class="section">Daily budget</div>
+    <div class="budget-controls">
+      <input class="search" id="budgetAmt" type="number" step="0.01" inputmode="decimal" placeholder="Daily budget (USD)" value="${budAmt}" style="margin:0" onchange="saveBudgetFromUI()" onblur="saveBudgetFromUI()">
+      <button class="icon-btn" type="button" onclick="saveBudgetFromUI()">Save</button>
+    </div>
+    <div class="section">Add a receipt</div>
+    <label class="home-card" style="cursor:pointer">
+      <div class="home-left"><div class="badge-icon">📷</div><div><div class="title">Scan / photo receipt</div><div class="sub">Opens camera · reads the total</div></div></div>
+      <input id="receiptFile" type="file" accept="image/*" capture="environment" style="display:none" onchange="onReceiptPhoto(this)">
+    </label>
+    <img id="receiptPreview" class="thumb" style="display:none;width:100%;height:160px;margin:8px 0 4px" alt="">
+    <div class="ocr-status" id="ocrStatus"></div>
+    <input class="search" id="dmgNote" placeholder="Where? (Ronto, World of Disney…)" style="margin:0 0 8px">
+    <input class="search" id="dmgAmt" type="number" step="0.01" inputmode="decimal" placeholder="Total on the receipt" style="margin:0 0 8px">
+    <select class="dmg-select" id="dmgCurrency">${currencyOptions("USD")}</select>
+    <div class="cat-row">
+      <button class="tab on" id="cat-food" onclick="setCat('food')">Food</button>
+      <button class="tab" id="cat-clothes" onclick="setCat('clothes')">Clothes</button>
+      <button class="tab" id="cat-other" onclick="setCat('other')">Other</button>
+    </div>
+    <button class="add-btn" onclick="addDamage()">Add to today</button>
+    <div class="section">Today</div>`;
+  if(!list.length) html+=`<div class="note">Nothing yet. Snap a receipt — we’ll try to read the total.</div>`;
+  list.slice().reverse().forEach(i=>{
+    const shown=convertAmount(i.amount,i.currency||"USD",disp);
+    const cur=i.currency||"USD";
+    html+=`<div class="item-card">
+      ${i.photo?`<img class="thumb" src="${i.photo}" alt="">`: `<div class="badge-icon">${catIcon(i.cat)}</div>`}
+      <div style="flex:1"><div class="title">${fmtMoney(shown,disp)}</div><div class="sub">${esc(i.note||i.cat)} · ${esc(i.cat)} · ${esc(cur)}</div></div>
+      <button class="icon-btn" onclick="delDamage('${i.id}')">✕</button>
+    </div>`;
+  });
+  if(list.length) html+=`<button class="icon-btn" style="width:100%;margin-top:12px" onclick="if(confirm('Clear today?')){saveDamages([]);drawDamages();}">Clear today</button>`;
+  const store=loadStore();
+  const budgets=loadBudgets();
+  const days=dayKeys(store).sort().reverse();
+  html+=`<div class="section">Days scanned</div>`;
+  if(!days.length){
+    html+=`<div class="note">No saved days yet.</div>`;
+  }else{
+    days.forEach(d=>{
+      const dayList=normalizeList(store[d]||[]);
+      const tUsd=dayTotalDisplay(dayList,"USD");
+      const tSee=convertAmount(tUsd,"USD",convCur);
+      const label=formatDayLabel(d);
+      const remSee=budgetRemainingDisplay(budgets[d], tSee, convCur);
+      html+=`<details class="day-scan">
+        <summary>
+          <div><div class="title">${esc(label)}</div><div class="sub">${dayList.length} receipt${dayList.length===1?"":"s"} · total <span class="fx-amount">${tSee.toFixed(2)} ${esc(convCur)}</span></div></div>
+          <span style="color:var(--muted)">›</span>
+        </summary>`;
+      if(remSee!=null){
+        const remLine=remSee>=0
+          ? `Budget left ${fmtMoney(remSee,convCur)}`
+          : `Over by ${fmtMoney(-remSee,convCur)}`;
+        html+=`<div class="receipt-row" style="border-bottom:1px solid var(--line)"><div style="flex:1;min-width:0"><div class="title">${remLine}</div></div></div>`;
+      }
+      if(!dayList.length){
+        html+=`<div class="note" style="padding:12px 16px">No receipts.</div>`;
+      }else{
+        dayList.slice().reverse().forEach(i=>{
+          const shown=convertAmount(i.amount,i.currency||"USD",convCur);
+          html+=`<div class="receipt-row">
+            <div class="badge-icon" style="flex-shrink:0">${i.photo?"📷":catIcon(i.cat)}</div>
+            <div style="flex:1;min-width:0">
+              <div class="title">${esc(i.note||i.cat||"Receipt")}</div>
+              <div class="sub" style="margin-top:2px">${fmtMoney(shown,convCur)} · ${esc(i.cat||"other")}</div>
+            </div>
+          </div>`;
+        });
+      }
+      html+=`</details>`;
+    });
+  }
+  document.getElementById("app").innerHTML=html;
+  window._dmgCat="food";
+}
+function setCat(c){
+  window._dmgCat=c;
+  ["food","clothes","other"].forEach(k=>{
+    const el=document.getElementById("cat-"+k);
+    if(el) el.className="tab"+(k===c?" on":"");
+  });
+}
+function preprocessReceiptForOCR(dataUrl){
+  return new Promise(async (resolve,reject)=>{
+    try{
+      const max=1600;
+      let bitmap=null;
+      try{
+        const blob=await (await fetch(dataUrl)).blob();
+        if(typeof createImageBitmap==="function"){
+          bitmap=await createImageBitmap(blob,{imageOrientation:"from-image"});
+        }
+      }catch(_){ bitmap=null; }
+      const draw=(w0,h0,drawFn)=>{
+        let w=w0,h=h0;
+        const edge=Math.max(w,h);
+        if(edge>max){ const s=max/edge; w=Math.round(w*s); h=Math.round(h*s); }
+        const c=document.createElement("canvas");
+        c.width=w; c.height=h;
+        const ctx=c.getContext("2d");
+        drawFn(ctx,w,h);
+        const id=ctx.getImageData(0,0,w,h);
+        const d=id.data;
+        let min=255,maxv=0;
+        const gray=new Float32Array(w*h);
+        for(let i=0,p=0;i<d.length;i+=4,p++){
+          const g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+          gray[p]=g;
+          if(g<min) min=g; if(g>maxv) maxv=g;
+        }
+        const span=Math.max(1,maxv-min);
+        for(let i=0,p=0;i<d.length;i+=4,p++){
+          let v=((gray[p]-min)/span)*255;
+          // mild extra contrast after stretch
+          v=128+1.15*(v-128);
+          if(v<0) v=0; else if(v>255) v=255;
+          d[i]=d[i+1]=d[i+2]=v;
+        }
+        ctx.putImageData(id,0,0);
+        resolve(c.toDataURL("image/png"));
+      };
+      if(bitmap){
+        draw(bitmap.width,bitmap.height,(ctx,w,h)=>ctx.drawImage(bitmap,0,0,w,h));
+        try{ bitmap.close&&bitmap.close(); }catch(_){}
+        return;
+      }
+      const img=new Image();
+      img.onload=()=>{
+        try{ draw(img.width,img.height,(ctx,w,h)=>ctx.drawImage(img,0,0,w,h)); }
+        catch(e){ reject(e); }
+      };
+      img.onerror=()=>reject(new Error("img"));
+      img.src=dataUrl;
+    }catch(e){ reject(e); }
+  });
+}
+async function runReceiptOCR(dataUrl){
+  const status=document.getElementById("ocrStatus");
+  if(status) status.textContent="Reading total…";
+  try{
+    if(typeof Tesseract==="undefined") throw new Error("no tesseract");
+    let ocrSrc=dataUrl;
+    try{ ocrSrc=await preprocessReceiptForOCR(dataUrl); }catch(_){ /* use original */ }
+    const psms=["6","11","4"];
+    let best=null;
+    for(const psm of psms){
+      try{
+        if(status) status.textContent="Reading total…";
+        const result=await Tesseract.recognize(ocrSrc,"eng",{logger:()=>{},tessedit_pageseg_mode:psm});
+        const parsed=parseReceiptText(result?.data?.text||"");
+        if(parsed.total==null) continue;
+        if(!best || (parsed.kwScore||0)>(best.kwScore||0)) best=parsed;
+        // Early stop if we already have a strong keyword (grand total / total paid)
+        if((parsed.kwScore||0)>=80) break;
+      }catch(_){ /* try next psm */ }
+    }
+    if(!best){
+      try{
+        const result=await Tesseract.recognize(ocrSrc,"eng",{logger:()=>{}});
+        best=parseReceiptText(result?.data?.text||"");
+      }catch(_){ best={total:null,merchant:"",kwScore:0}; }
+    }
+    const parsed=best||{total:null,merchant:"",kwScore:0};
+    const amtEl=document.getElementById("dmgAmt");
+    const noteEl=document.getElementById("dmgNote");
+    const curEl=document.getElementById("dmgCurrency");
+    if(curEl) curEl.value="USD";
+    if(amtEl && parsed.total!=null) amtEl.value=String(parsed.total);
+    if(noteEl && parsed.merchant && !(noteEl.value||"").trim()) noteEl.value=parsed.merchant;
+    if(status){
+      if(parsed.total!=null)
+        status.textContent="Total found — check it, then Add.";
+      else
+        status.textContent="Couldn’t find a total — type it in.";
+    }
+  }catch(e){
+    if(status) status.textContent="OCR unavailable — enter total manually.";
+  }
+}
+function onReceiptPhoto(input){
+  const file=input.files&&input.files[0]; if(!file) return;
+  const status=document.getElementById("ocrStatus");
+  if(status) status.textContent="";
+  const reader=new FileReader();
+  reader.onload=()=>{
+    const img=new Image();
+    img.onload=()=>{
+      const c=document.createElement("canvas");
+      const max=1400; let w=img.width,h=img.height;
+      if(w>max){ h=h*(max/w); w=max; }
+      c.width=w; c.height=h;
+      c.getContext("2d").drawImage(img,0,0,w,h);
+      pendingPhoto=c.toDataURL("image/jpeg",0.7);
+      const p=document.getElementById("receiptPreview");
+      if(p){ p.src=pendingPhoto; p.style.display="block"; }
+      runReceiptOCR(pendingPhoto);
+    };
+    img.src=reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+function saveBudgetFromUI(){
+  const raw=document.getElementById("budgetAmt")?.value;
+  if(raw==null || String(raw).trim()==="") return;
+  const amt=parseFloat(raw);
+  if(isNaN(amt)){ alert("Enter a budget amount."); return; }
+  const currency="USD";
+  const prev=loadBudgets()[dayId()];
+  if(prev && +prev.amount===amt && (prev.currency||"USD")===currency) return;
+  saveBudget(dayId(), {amount:amt, currency});
+  if(view==="damages") drawDamages();
+}
+function addDamage(){
+  const amt=parseFloat(document.getElementById("dmgAmt")?.value);
+  if(isNaN(amt)||amt<=0){ alert("Enter the receipt total."); return; }
+  const cur=(document.getElementById("dmgCurrency")?.value||"USD");
+  const currency=CURRENCIES.includes(cur)?cur:"USD";
+  const list=loadDamages();
+  list.push({
+    id:String(Date.now()),
+    amount:amt,
+    currency,
+    cat:window._dmgCat||"other",
+    note:(document.getElementById("dmgNote")?.value||"").trim(),
+    photo:pendingPhoto||"",
+    ts:new Date().toISOString(),
+    items:[]
+  });
+  saveDamages(list);
+  pendingPhoto="";
+  drawDamages();
+}
+function delDamage(id){
+  saveDamages(loadDamages().filter(i=>i.id!==id));
+  drawDamages();
+}
+
+function goBack(){
+  if(view==="menu" && currentPark) openPark(currentPark.id, currentPark.name, "food");
+  else if(view==="waits"||view==="food") showParkList(mode||"waits");
+  else renderHome();
+}
+function refreshCurrent(){
+  if(currentPark && (view==="waits"||view==="food")) openPark(currentPark.id, currentPark.name, view);
+}
+
+async function loadHome(){
+  showLoading("Loading parks…");
+  try{
+    const res=await fetch(`${API}/destinations`);
+    if(!res.ok) throw new Error("dest");
+    const data=await res.json();
+    destinations=(data.destinations||[]).filter(d=>d.parks&&d.parks.length);
+    renderHome();
+  }catch(e){
+    showError("Could not load the park list.");
+  }
+}
+loadHome();
+ensureFxRates().then(()=>{ if(view==="damages") drawDamages(); }).catch(()=>{});
+</script>
+</body>
+</html>
