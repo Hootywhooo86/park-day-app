@@ -1541,9 +1541,59 @@ async function createTrip(){
     await finishAccountOk(name,pin,res);
   }catch(e){ toast("Could not reach sync — check connection and try again."); }
 }
+// ---- Sync reliability: delete tombstones + ordered push/pull ----
+// Tombstones remember what the user deleted so a stale server copy can never
+// resurrect it. They clear once the delete is confirmed on the server.
+function loadTombs(){ try{ return JSON.parse(localStorage.getItem("parkday-tombs")||"{}"); }catch(e){ return {}; } }
+function saveTombs(t){ try{ localStorage.setItem("parkday-tombs", JSON.stringify(t)); }catch(e){} }
+function tombDay(d){ const t=loadTombs(); t.days=t.days||{}; t.days[d]=1; if(t.items) delete t.items[d]; saveTombs(t); }
+function tombItems(d, ids){ const t=loadTombs(); t.items=t.items||{}; t.items[d]=t.items[d]||{}; ids.forEach(id=>{ if(id) t.items[d][id]=1; }); saveTombs(t); }
+function clearTombsFor(d){ const t=loadTombs(); let ch=false; if(t.days&&t.days[d]){ delete t.days[d]; ch=true; } if(t.items&&t.items[d]){ delete t.items[d]; ch=true; } if(ch) saveTombs(t); }
+
+// Pushes are queued and retried: a failed/offline delete stays queued instead
+// of being silently dropped, and pulls always wait for queued pushes first.
+let syncChain=Promise.resolve();
+const pushQueue=new Map(); // day -> items (latest wins)
+function syncPush(day, items){
+  const a=getAccount(); if(!a) return syncChain;
+  pushQueue.set(day, items);
+  syncChain=syncChain.then(flushPushes).catch(()=>{});
+  return syncChain;
+}
+async function pushDay(a, day, items){
+  try{
+    const payload={name:a.name,pin:a.pin,day,items};
+    const b=loadBudgets()[day];
+    if(b && Number.isFinite(+b.amount)) payload.budget={amount:+b.amount, currency:b.currency||"USD"};
+    const res=await fetchTimeout(SYNC_BASE+"/days",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(payload)
+    });
+    if(res.status===410) return true; // account gone; nothing left to converge
+    if(!res.ok) return false;
+    try{
+      const data=await res.json();
+      if(data&&data.expiresAt) setExpiresAt(data.expiresAt);
+    }catch(e){}
+    return true;
+  }catch(e){ return false; } // offline: stays queued, retried on next sync
+}
+async function flushPushes(){
+  const a=getAccount(); if(!a){ pushQueue.clear(); return; }
+  for(const [day, items] of Array.from(pushQueue.entries())){
+    let ok=false;
+    try{ ok=await pushDay(a, day, items); }catch(e){ ok=false; }
+    if(ok){ pushQueue.delete(day); clearTombsFor(day); }
+    else break; // keep order; retry everything later
+  }
+}
+window.addEventListener("online", ()=>{ flushPushes().catch(()=>{}); });
 async function syncPull(){
   const a=getAccount();
   if(!a) return null;
+  try{ await syncChain; }catch(e){}
+  await flushPushes(); // our latest changes (including deletes) reach the server before we read
   const q=new URLSearchParams({name:a.name,pin:a.pin});
   const res=await fetchTimeout(SYNC_BASE+"/days?"+q.toString());
   if(res.status===401){ toast("Wrong PIN for sync."); return null; }
@@ -1560,8 +1610,26 @@ async function syncPull(){
   if(data&&data.expiresAt) setExpiresAt(data.expiresAt);
   if(data&&data.store&&typeof data.store==="object"){
     const local=loadStore();
-    const merged=Object.assign({}, local, data.store);
-    Object.keys(merged).forEach(k=>{ if(Array.isArray(merged[k])) merged[k]=normalizeList(merged[k]); });
+    const tombs=loadTombs();
+    const merged=Object.assign({}, local);
+    Object.keys(data.store).forEach(k=>{
+      if(k==="__budgets") return;
+      if(tombs.days&&tombs.days[k]){
+        // We deleted this day; the delete hasn't been confirmed yet.
+        // If the server already shows it gone/empty, the delete landed: drop the tombstone.
+        const rl=data.store[k];
+        if(!Array.isArray(rl)||!rl.length){ const t=loadTombs(); if(t.days){ delete t.days[k]; saveTombs(t); } }
+        return; // never resurrect a deleted day from a stale server copy
+      }
+      let list=data.store[k];
+      if(Array.isArray(list)){
+        list=normalizeList(list);
+        const it=tombs.items&&tombs.items[k];
+        if(it) list=list.filter(i=>!(i&&it[i.id])); // never resurrect deleted receipts
+      }
+      merged[k]=list;
+    });
+    if(tombs.days) Object.keys(tombs.days).forEach(k=>{ delete merged[k]; });
     if(local.__budgets && typeof local.__budgets==="object") merged.__budgets=Object.assign({}, local.__budgets);
     if(data.budgets && typeof data.budgets==="object"){
       merged.__budgets=Object.assign({}, merged.__budgets||{}, data.budgets);
@@ -1573,30 +1641,6 @@ async function syncPull(){
     saveStore(s);
   }
   return data;
-}
-async function syncPush(day, items){
-  const a=getAccount();
-  if(!a) return;
-  try{
-    const payload={name:a.name,pin:a.pin,day,items};
-    const b=loadBudgets()[day];
-    if(b && Number.isFinite(+b.amount)) payload.budget={amount:+b.amount, currency:b.currency||"USD"};
-    const res=await fetchTimeout(SYNC_BASE+"/days",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify(payload)
-    });
-    if(res.status===410){
-      /* expire gently on push — next pull/save will clear UI */
-      return;
-    }
-    if(res.ok){
-      try{
-        const data=await res.json();
-        if(data&&data.expiresAt) setExpiresAt(data.expiresAt);
-      }catch{}
-    }
-  }catch(e){ /* offline ok */ }
 }
 function exportTrip(){
   const blob=new Blob([JSON.stringify({account:getAccount(),store:loadStore()},null,2)],{type:"application/json"});
@@ -1696,7 +1740,7 @@ function drawDamages(){
       <button class="icon-btn" onclick="delDamage('${i.id}')">✕</button>
     </div>`;
   });
-  if(list.length) html+=`<button class="icon-btn" style="width:100%;margin-top:12px" onclick="if(confirm('Clear today?')){saveDamages([]);drawDamages();}">Clear today</button>`;
+  if(list.length) html+=`<button class="icon-btn" style="width:100%;margin-top:12px" onclick="clearToday()">Clear today</button>`;
   const store=loadStore();
   const budgets=loadBudgets();
   const days=dayKeys(store).sort().reverse();
@@ -1919,7 +1963,16 @@ function addDamage(){
   drawDamages();
 }
 function delDamage(id){
+  const d=dayId();
+  tombItems(d, [id]);
   saveDamages(loadDamages().filter(i=>i.id!==id));
+  drawDamages();
+}
+function clearToday(){
+  if(!confirm('Clear today?')) return;
+  const d=dayId();
+  tombItems(d, loadDamages().map(i=>i.id));
+  saveDamages([]);
   drawDamages();
 }
 function delDay(d){
@@ -1927,6 +1980,7 @@ function delDay(d){
   const s=loadStore();
   delete s[d];
   saveStore(s);
+  tombDay(d); // set before the push below so a stale server copy can't bring it back
   saveBudget(d, null); // clears that day's budget, re-saves, and syncs the now-empty day
   drawDamages();
   toast("Day deleted.");
