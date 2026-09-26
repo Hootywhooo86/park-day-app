@@ -241,13 +241,16 @@
   <main id="app"><div class="loading"><div class="spin"></div>Loading parks…</div></main>
   <footer>
     Live waits from <a href="https://themeparks.wiki" target="_blank">ThemeParks.wiki</a> · Weather via Open-Meteo<br>
-    Receipts stay on this phone. Not affiliated with Disney or Universal.
+    Receipts stay on this phone. Not affiliated with Disney or Universal.<br>
+    <span id="appVer" style="opacity:.7"></span>
   </footer>
 <script>
+const APP_VERSION="2026-09-26d"; // bump on every release so we can confirm what's running
 // Register the service worker so the app installs and opens offline-capable
 if("serviceWorker" in navigator){
   window.addEventListener("load", ()=>{
     navigator.serviceWorker.register("sw.js").catch(()=>{});
+    const v=document.getElementById("appVer"); if(v) v.textContent="v"+APP_VERSION;
   });
 }
 </script>
