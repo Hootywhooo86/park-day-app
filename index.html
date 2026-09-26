@@ -87,6 +87,9 @@
       border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px;
     }
     .temp { font-size: 1.7rem; font-weight: 750; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+    .unit-toggle { display: flex; gap: 4px; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 3px; flex-shrink: 0; }
+    .unit-toggle button { border: 0; background: transparent; color: var(--muted); font-weight: 700; font-size: .78rem; padding: 7px 11px; border-radius: 9px; cursor: pointer; }
+    .unit-toggle button.on { background: var(--accent-soft); color: var(--text); }
     .legend { display: flex; gap: 10px; flex-wrap: wrap; color: var(--muted); font-size: .75rem; margin: 8px 0 12px; }
     .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
     .land-head {
@@ -667,12 +670,27 @@ function filterParks(){
 async function getWeather(parkId){
   if(weatherCache[parkId] && Date.now()-weatherCache[parkId].ts<10*60*1000) return weatherCache[parkId].data;
   const c=PARK_COORDS[parkId]; if(!c) return null;
+  const u=getTempUnit();
   try{
-    const res=await fetchTimeout(`https://api.open-meteo.com/v1/forecast?latitude=${c[0]}&longitude=${c[1]}&current=temperature_2m,weather_code,apparent_temperature,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph`);
+    const res=await fetchTimeout(`https://api.open-meteo.com/v1/forecast?latitude=${c[0]}&longitude=${c[1]}&current=temperature_2m,weather_code,apparent_temperature,wind_speed_10m&temperature_unit=${u==="C"?"celsius":"fahrenheit"}&wind_speed_unit=${u==="C"?"kmh":"mph"}`);
     if(!res.ok) return null;
     const data=await res.json();
     weatherCache[parkId]={ts:Date.now(), data}; return data;
   }catch{return null;}
+}
+
+// Temperature unit preference — Canadians get Celsius by default, obviously
+function getTempUnit(){
+  try{ return localStorage.getItem("pd_tempUnit")==="F" ? "F" : "C"; }catch{ return "C"; }
+}
+function setTempUnit(u){
+  try{ localStorage.setItem("pd_tempUnit", u); }catch{}
+  weatherCache={}; // refetch in the new unit
+  if(currentPark && (view==="waits"||view==="food")){
+    refreshParkData(currentPark.id, view, true);
+  } else {
+    toast(u==="C" ? "Weather in °C from now on." : "Weather in °F from now on.");
+  }
 }
 
 function saveLastPark(id, name, kind){
@@ -742,8 +760,13 @@ async function refreshParkData(parkId, kind, silent){
 
 function weatherBar(w){
   if(!w?.current) return "";
-  return `<div class="weather"><div><div class="temp">${Math.round(w.current.temperature_2m)}°</div>
-    <div class="sub">${weatherText(w.current.weather_code)} · Feels ${Math.round(w.current.apparent_temperature)}°</div></div></div>`;
+  const u=getTempUnit(), deg=u==="C"?"°C":"°F";
+  return `<div class="weather"><div><div class="temp">${Math.round(w.current.temperature_2m)}${deg}</div>
+    <div class="sub">${weatherText(w.current.weather_code)} · Feels ${Math.round(w.current.apparent_temperature)}${deg}</div></div>
+    <div class="unit-toggle" role="group" aria-label="Temperature unit">
+      <button type="button" class="${u==="C"?"on":""}" onclick="setTempUnit('C')" aria-pressed="${u==="C"}">°C</button>
+      <button type="button" class="${u==="F"?"on":""}" onclick="setTempUnit('F')" aria-pressed="${u==="F"}">°F</button>
+    </div></div>`;
 }
 
 
