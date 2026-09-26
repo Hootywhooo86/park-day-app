@@ -1524,7 +1524,10 @@ function drawDamages(){
       html+=`<details class="day-scan">
         <summary>
           <div><div class="title">${esc(label)}</div><div class="sub">${dayList.length} receipt${dayList.length===1?"":"s"} · total <span class="fx-amount">${tSee.toFixed(2)} ${esc(convCur)}</span></div></div>
-          <span style="color:var(--muted)">›</span>
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+            <button class="icon-btn" type="button" title="Delete this day" aria-label="Delete ${esc(label)}" onclick="event.preventDefault();delDay('${d}')">✕</button>
+            <span style="color:var(--muted)">›</span>
+          </div>
         </summary>`;
       if(remSee!=null){
         const remLine=remSee>=0
@@ -1712,6 +1715,15 @@ function addDamage(){
 function delDamage(id){
   saveDamages(loadDamages().filter(i=>i.id!==id));
   drawDamages();
+}
+function delDay(d){
+  if(!confirm(`Delete ${formatDayLabel(d)} and all its receipts?`)) return;
+  const s=loadStore();
+  delete s[d];
+  saveStore(s);
+  saveBudget(d, null); // clears that day's budget, re-saves, and syncs the now-empty day
+  drawDamages();
+  toast("Day deleted.");
 }
 
 function goBack(){
