@@ -59,6 +59,9 @@
     .star-btn.on { color:#f5b942; }
     .ride-side { display:flex; align-items:center; gap:6px; }
     .fav-bell { border:1px solid var(--line); background:rgba(255,255,255,.04); color:var(--text); border-radius:999px; padding:5px 10px; font-size:.72rem; font-weight:700; cursor:pointer; white-space:nowrap; margin-top:6px; width:100%; }
+    .rode-btn { border:0; background:transparent; color:var(--muted); font-size:1.15rem; cursor:pointer; padding:6px 4px; line-height:1; }
+    .rode-btn.on { color:var(--green); }
+    .rode-count { font-size:.82rem; color:var(--muted); font-weight:650; margin:8px 2px 0; }
     main { max-width: 680px; margin: 0 auto; padding: 16px; }
     .hero {
       background: var(--card);
@@ -245,7 +248,7 @@
     <span id="appVer" style="opacity:.7"></span>
   </footer>
 <script>
-const APP_VERSION="2026-09-26d"; // bump on every release so we can confirm what's running
+const APP_VERSION="2026-09-26e"; // bump on every release so we can confirm what's running
 // Register the service worker so the app installs and opens offline-capable
 if("serviceWorker" in navigator){
   window.addEventListener("load", ()=>{
@@ -1028,16 +1031,48 @@ function checkAlerts(parkId, live){
     }
   });
 }
-function rideRowHtml(r, favs, inFavs){
+function rideRowHtml(r, favs, inFavs, showLand){
   const open=r.status==="OPERATING";
   const fav=favs[r.id]!=null, th=+favs[r.id]||0;
+  const rode=isRode(r.id);
   const bell=inFavs?`<button type="button" class="fav-bell" title="Wait alert" onclick="cycleAlert('${r.id}')">${th>0?`🔔 ≤${th}m`:`🔕 off`}</button>`:"";
-  return `<div class="item-card"><div><div class="title">${esc(r.name)}</div>
+  return `<div class="item-card"><div><div class="title">${esc(r.name)}${rode?` <span style="color:var(--green)">✓</span>`:""}</div>
+    ${showLand&&r.land?`<div class="sub">${esc(r.land)}</div>`:""}
     ${!open?`<div class="sub">${esc(r.status||"Closed")}</div>`:""}
     ${open&&r.single!=null?`<div class="sub">Single rider ${r.single} min</div>`:""}</div>
-    <div class="ride-side"><button type="button" class="star-btn${fav?" on":""}" aria-label="${fav?"Remove from":"Add to"} favorites" onclick="toggleFav('${r.id}')">${fav?"★":"☆"}</button>
+    <div class="ride-side"><button type="button" class="rode-btn${rode?" on":""}" aria-label="${rode?"Unmark ridden":"Mark as ridden"}" title="${rode?"Ridden ✓ — tap to undo":"Rode it"}" onclick="toggleRode('${r.id}')">✓</button><button type="button" class="star-btn${fav?" on":""}" aria-label="${fav?"Remove from":"Add to"} favorites" onclick="toggleFav('${r.id}')">${fav?"★":"☆"}</button>
     <div><div class="wait ${open?waitClass(r.standby):"z"}">${open?formatWait(r.standby):esc(r.status||"Closed")}</div>
     ${r.ll?`<div class="ll">LL ${esc(r.ll)}</div>`:""}${bell}</div></div></div>`;
+}
+// Ridden-today log: {"2026-09-26": {"parkId:rideId": 1}} — resets each day automatically
+function loadRode(){ try{ return JSON.parse(localStorage.getItem("pd_rides")||"{}"); }catch{ return {}; } }
+function saveRode(r){ try{ localStorage.setItem("pd_rides", JSON.stringify(r)); }catch{} }
+function rodeKey(rideId){ return currentPark.id+":"+rideId; }
+function isRode(rideId){
+  const day=loadRode()[dayId()];
+  return !!(day && day[rodeKey(rideId)]);
+}
+function rodeCountToday(parkId){
+  const day=loadRode()[dayId()]||{};
+  const p=parkId+":";
+  return Object.keys(day).filter(k=>k.startsWith(p)).length;
+}
+function toggleRode(rideId){
+  const r=loadRode(), d=dayId();
+  r[d]=r[d]||{};
+  const k=rodeKey(rideId);
+  if(r[d][k]){ delete r[d][k]; }
+  else { r[d][k]=1; toast("🎢 Nice — ride logged."); }
+  if(!Object.keys(r[d]).length) delete r[d];
+  saveRode(r);
+  const cached=currentPark && liveCache[currentPark.id];
+  if(cached) renderRides(cached.live, cached.weather);
+}
+let rideSort="land"; // "land" | "short"
+function setRideSort(m){
+  rideSort=m;
+  const cached=currentPark && liveCache[currentPark.id];
+  if(cached) renderRides(cached.live, cached.weather);
 }
 function renderRides(live, weather){
   const rides=(live.liveData||[]).filter(e=>e.entityType==="ATTRACTION").map(e=>{
@@ -1062,13 +1097,35 @@ function renderRides(live, weather){
 
   let html=weatherBar(weather);
   html+=`<div class="legend"><span><span class="dot" style="background:var(--green)"></span>1–15</span><span><span class="dot" style="background:var(--yellow)"></span>16–40</span><span><span class="dot" style="background:var(--red)"></span>41+</span></div>`;
-  if(favRides.length){
-    html+=`<div class="section">★ Favorites</div>`;
-    favRides.forEach(r=>{ html+=rideRowHtml(r,favs,true); });
-  }
-  for(const land of order){
-    html+=landHeaderHtml(currentPark.id, land);
-    for(const r of groups[land]) html+=rideRowHtml(r,favs,false);
+  html+=`<div class="cat-row" style="margin-top:10px">
+    <button type="button" class="tab${rideSort==="land"?" on":""}" onclick="setRideSort('land')">🗺 By land</button>
+    <button type="button" class="tab${rideSort==="short"?" on":""}" onclick="setRideSort('short')">⚡ Shortest first</button>
+  </div>`;
+  const nRode=rodeCountToday(currentPark.id);
+  if(nRode) html+=`<div class="rode-count">🎢 ${nRode} ride${nRode===1?"":"s"} crushed today</div>`;
+  if(rideSort==="short"){
+    const sorted=[...rides].sort((a,b)=>{
+      const ao=a.status==="OPERATING", bo=b.status==="OPERATING";
+      if(ao&&!bo) return -1;
+      if(!ao&&bo) return 1;
+      const aw=a.standby??1e9, bw=b.standby??1e9;
+      return (aw-bw) || a.name.localeCompare(b.name);
+    });
+    if(favRides.length){
+      html+=`<div class="section">★ Favorites</div>`;
+      favRides.forEach(r=>{ html+=rideRowHtml(r,favs,true,true); });
+    }
+    html+=`<div class="section">⚡ Shortest waits right now</div>`;
+    sorted.forEach(r=>{ html+=rideRowHtml(r,favs,false,true); });
+  } else {
+    if(favRides.length){
+      html+=`<div class="section">★ Favorites</div>`;
+      favRides.forEach(r=>{ html+=rideRowHtml(r,favs,true); });
+    }
+    for(const land of order){
+      html+=landHeaderHtml(currentPark.id, land);
+      for(const r of groups[land]) html+=rideRowHtml(r,favs,false);
+    }
   }
   html+=`<div class="note">Updated ${new Date().toLocaleTimeString()}</div>`;
   document.getElementById("app").innerHTML=html;
