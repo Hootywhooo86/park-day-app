@@ -297,36 +297,36 @@ const LANDS = {
     ["San Fransokyo Square", ["baymax","san fransokyo","bakery tour","lucky fortune","lucky cat"]]
   ],
   "75ea578a-adc8-4116-a54d-dccb60765ef9": [
-    ["Main Street, U.S.A.", ["main street","walt disney world railroad","town square"]],
-    ["Adventureland", ["jungle cruise","pirates of the caribbean","swiss family","magic carpets","enchanted tiki"]],
-    ["Frontierland", ["big thunder","splash mountain","tom sawyer","country bear","frontierland"]],
+    ["Main Street, U.S.A.", ["main street","cinderella castle","railroad - main street"]],
+    ["Adventureland", ["jungle cruise","pirates of the caribbean","swiss family","magic carpets","tiki","treasures of the seven seas"]],
+    ["Frontierland", ["big thunder","tiana","country bear","tom sawyer"]],
     ["Liberty Square", ["haunted mansion","hall of presidents","liberty belle"]],
-    ["Fantasyland", ["seven dwarfs","peter pan","it's a small world","prince charming","under the sea","mad tea","dumbo","barnstormer","many adventures of winnie","enchanted tales"]],
-    ["Tomorrowland", ["space mountain","tron","buzz lightyear","peoplemover","carousel of progress","astro orbiter","tomorrowland speedway","stitch"]],
-    ["Bayou Country / Tiana", ["tiana"]]
+    ["Fantasyland", ["seven dwarfs","peter pan","small world","prince charming","under the sea","mad tea","dumbo","barnstormer","winnie","enchanted tales","philharmagic","casey jr","railroad - fantasyland"]],
+    ["Tomorrowland", ["space mountain","tron","buzz lightyear","peoplemover","carousel of progress","astro orbiter","speedway","laugh floor"]]
   ],
   "47f90d2c-e191-4239-a466-5892ef59a88b": [
-    ["World Celebration", ["spaceship earth","dreamers point","communicore","club cool"]],
-    ["World Nature", ["soarin","living with the land","seas with nemo","turtle talk","awesome planet"]],
-    ["World Discovery", ["guardians of the galaxy","test track","mission: space"]],
-    ["World Showcase", ["frozen ever after","gran fiesta","reflections of china","american adventure","impressions de france","beauty and the beast sing-along","canada far","mexico","norway","china","germany","italy","japan","morocco","france","united kingdom","americas"]]
+    ["World Celebration", ["spaceship earth","imagination","imageworks","short film festival","project tomorrow"]],
+    ["World Nature", ["soarin","living with the land","nemo","turtle talk","awesome planet","journey of water","seabase","bruce's shark world"]],
+    ["World Discovery", ["guardians of the galaxy","test track","mission","advanced training lab"]],
+    ["World Showcase", ["frozen ever after","remy","gran fiesta","reflections of china","american adventure","impressions de france","beauty and the beast sing-along","canada far","american heritage","bijutsu-kan","mexico folk art","whispering willows","stave church","arts and history","palais du cinéma","kidcot"]]
   ],
   "288747d1-8b4f-4a64-867e-ea7c9b27bad8": [
-    ["Echo Lake", ["indiana jones epic stunt","star tours","vacation fun"]],
-    ["Grand Avenue", ["muppet"]],
+    ["Hollywood Boulevard", ["runaway railway","walt disney presents"]],
+    ["Echo Lake", ["indiana jones","star tours","vacation fun"]],
+    ["Sunset Boulevard", ["tower of terror","roller coaster","beauty and the beast","fantasmic"]],
+    ["Grand Avenue", ["muppetvision"]],
     ["Toy Story Land", ["slinky dog","alien swirling","toy story mania"]],
     ["Animation Courtyard", ["launch bay","disney junior","voyage of the little mermaid"]],
-    ["Sunset Boulevard", ["tower of terror","rock 'n' roller","beauty and the beast live","fantasmic"]],
-    ["Star Wars: Galaxy's Edge", ["millennium falcon","rise of the resistance","smugglers run"]],
-    ["Hollywood Boulevard", ["runaway railway","hollywood boulevard"]]
+    ["Star Wars: Galaxy's Edge", ["millennium falcon","rise of the resistance","smugglers run"]]
   ],
   "1c84a229-8862-4648-9c71-378ddd2c7693": [
-    ["Discovery Island", ["tree of life","tough to be a bug"]],
-    ["Pandora – The World of Avatar", ["flight of passage","na'vi river"]],
-    ["Africa", ["kilimanjaro","festival of the lion king","wildlife express"]],
-    ["Rafiki's Planet Watch", ["conservation station","habitat habit","affection section"]],
-    ["Asia", ["expedition everest","kali river","feathered friends"]],
-    ["DinoLand U.S.A.", ["dinosaur","triceratops","finding nemo the musical"]]
+    ["The Oasis", ["oasis"]],
+    ["Discovery Island", ["tree of life","discovery island","wilderness explorers","zootopia"]],
+    ["Pandora – The World of Avatar", ["flight of passage","na'vi"]],
+    ["Africa", ["kilimanjaro","gorilla falls","wildlife express"]],
+    ["Rafiki's Planet Watch", ["conservation station"]],
+    ["Asia", ["expedition everest","kali river","maharajah"]],
+    ["DinoLand U.S.A.", ["dinosaur"]]
   ],
   "12dbb85b-265f-44e6-bccf-f1faa17211fc": [
     ["Celestial Park", ["constellation carousel","astronomicus"]],
@@ -829,6 +829,10 @@ function weatherBar(w){
 
 const DL_ID="7340550b-c14d-4def-80bb-acdb51d49a66";
 const DCA_ID="832fcd51-ea19-4e77-85c7-75d5843b127c";
+const MK_ID="75ea578a-adc8-4116-a54d-dccb60765ef9";
+const EPCOT_ID="47f90d2c-e191-4239-a466-5892ef59a88b";
+const HS_ID="288747d1-8b4f-4a64-867e-ea7c9b27bad8";
+const AK_ID="1c84a229-8862-4648-9c71-378ddd2c7693";
 
 const LAND_MAP_COLORS={
   // Disneyland
@@ -850,7 +854,29 @@ const LAND_MAP_COLORS={
   "Paradise Gardens Park":"#70c868",
   "Pixar Pier":"#ff9ec8",
   "Grizzly Peak":"#b8885a",
-  "San Fransokyo Square":"#e0cc9a"
+  "San Fransokyo Square":"#e0cc9a",
+  // Magic Kingdom
+  "Liberty Square":"#b89ae0",
+  // EPCOT
+  "World Celebration":"#ff9e6b",
+  "World Nature":"#58c98a",
+  "World Discovery":"#6ea8ff",
+  "World Showcase":"#c79bf0",
+  // Hollywood Studios
+  "Hollywood Boulevard":"#f0a85a",
+  "Echo Lake":"#6ec8e8",
+  "Grand Avenue":"#b08ae0",
+  "Toy Story Land":"#ffd45e",
+  "Animation Courtyard":"#8fd48c",
+  "Sunset Boulevard":"#ff8a7a",
+  // Animal Kingdom
+  "Discovery Island":"#8fd48c",
+  "Pandora – The World of Avatar":"#5ec8e8",
+  "Africa":"#e8a85e",
+  "Rafiki's Planet Watch":"#a8d48c",
+  "Asia":"#e87a68",
+  "DinoLand U.S.A.":"#d4b85e",
+  "The Oasis":"#6ec8a8"
 };
 
 function landMapSvg(parkId, activeLand){
@@ -895,6 +921,57 @@ function landMapSvg(parkId, activeLand){
       poly("San Fransokyo Square","22,48 72,44 70,78 24,82"),
     ];
     return `<svg viewBox="0 0 200 210" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${parts.join("")}</svg>`;
+  }
+  if(parkId===MK_ID){
+    // Schematic Magic Kingdom: Main Street south, hub center, lands around
+    const parts=[
+      poly("Main Street, U.S.A.","88,168 112,168 116,214 84,214"),
+      poly("Adventureland","28,112 64,108 68,144 32,148"),
+      poly("Frontierland","24,70 60,66 64,106 28,110"),
+      poly("Liberty Square","62,104 96,100 100,140 66,144"),
+      poly("Fantasyland","70,30 130,26 136,100 76,106"),
+      poly("Tomorrowland","136,70 186,64 192,140 142,148"),
+    ];
+    const hub=`<circle cx="100" cy="148" r="10" fill="none" stroke="${dim}" stroke-width="1"/>`;
+    return `<svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${hub}${parts.join("")}</svg>`;
+  }
+  if(parkId===EPCOT_ID){
+    // Schematic EPCOT: three neighborhoods north, World Showcase lagoon ring south
+    const parts=[
+      poly("World Celebration","84,148 116,148 120,192 80,192"),
+      poly("World Nature","28,98 80,94 84,148 32,152"),
+      poly("World Discovery","120,94 172,90 176,148 124,152"),
+      poly("World Showcase","24,156 176,152 172,208 28,212"),
+    ];
+    return `<svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${parts.join("")}</svg>`;
+  }
+  if(parkId===HS_ID){
+    // Schematic Hollywood Studios: Hollywood Blvd south entrance, Sunset east,
+    // Galaxy's Edge southeast, Toy Story southwest
+    const parts=[
+      poly("Hollywood Boulevard","86,168 114,168 118,212 82,212"),
+      poly("Echo Lake","32,118 82,114 86,166 36,170"),
+      poly("Grand Avenue","30,82 78,78 82,116 34,120"),
+      poly("Animation Courtyard","82,82 118,78 122,116 86,120"),
+      poly("Sunset Boulevard","122,82 172,78 176,150 126,154"),
+      poly("Toy Story Land","34,170 82,166 86,208 38,212"),
+      poly("Star Wars: Galaxy's Edge","122,154 172,150 176,198 126,202"),
+    ];
+    return `<svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${parts.join("")}</svg>`;
+  }
+  if(parkId===AK_ID){
+    // Schematic Animal Kingdom: Oasis south entrance, Discovery Island center,
+    // Pandora west, Africa southwest, Asia east, DinoLand southeast, Rafiki's NW
+    const parts=[
+      poly("The Oasis","86,170 114,170 118,212 82,212"),
+      poly("Discovery Island","78,110 122,106 126,160 82,164"),
+      poly("Pandora – The World of Avatar","28,80 74,76 78,130 32,134"),
+      poly("Africa","30,134 76,130 80,180 34,184"),
+      poly("Rafiki's Planet Watch","18,30 64,26 68,70 22,74"),
+      poly("Asia","126,80 174,76 178,130 130,134"),
+      poly("DinoLand U.S.A.","128,134 174,130 178,180 132,184"),
+    ];
+    return `<svg viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${parts.join("")}</svg>`;
   }
   return "";
 }
