@@ -1700,10 +1700,10 @@ function drawDamages(){
   const store=loadStore();
   const budgets=loadBudgets();
   const days=dayKeys(store).sort().reverse();
-  // Trip totals across every saved day
+  // Trip totals across every saved day (always shown so it's easy to find)
   const tripItems=[];
   days.forEach(d=>normalizeList(store[d]||[]).forEach(i=>tripItems.push(i)));
-  if(tripItems.length){
+  {
     const tBy={food:0,clothes:0,other:0};
     let tTotal=0;
     tripItems.forEach(i=>{
