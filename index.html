@@ -2,124 +2,147 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="theme-color" content="#000000" />
+  <meta name="theme-color" content="#0a0c10" />
+  <link rel="preconnect" href="https://api.themeparks.wiki" />
+  <link rel="preconnect" href="https://api.open-meteo.com" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%230a0c10'/%3E%3Cpath d='M3 16.5c3-9 6-9 9 0s6-9 9-2.5' stroke='%238f7bf5' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E" />
   <title>Park Day</title>
   <style>
     :root {
-      --bg: #000000;
-      --bg2: #000000;
-      --card: #140a1c;
-      --card2: #1c1028;
-      --line: #2e2238;
-      --text: #ffffff;
-      --muted: #b8b0c4;
-      --green: #3ddc84;
-      --yellow: #f5c451;
-      --red: #ff5d6c;
-      --gray: #7d86a3;
-      --accent: #b794f6;
+      --bg: #0a0c10;
+      --bg2: #0a0c10;
+      --card: #12151c;
+      --card2: #181d27;
+      --line: rgba(255,255,255,.08);
+      --text: #f4f6fa;
+      --muted: #98a1b3;
+      --green: #35d07f;
+      --yellow: #f0c453;
+      --red: #ff6b7a;
+      --gray: #8b94a7;
+      --accent: #8f7bf5;
+      --accent-soft: rgba(143,123,245,.14);
       --gold: #e8c47a;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
       background: var(--bg);
       color: var(--text); min-height: 100vh; padding-bottom: 48px;
     }
     header {
       position: sticky; top: 0; z-index: 50;
       display: flex; align-items: center; gap: 10px;
-      padding: 14px 16px;
-      background: rgba(0,0,0,.86);
-      backdrop-filter: blur(16px);
+      padding: 12px 16px;
+      background: rgba(10,12,16,.82);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--line);
     }
-    header h1 { font-size: 1.08rem; font-weight: 700; flex: 1; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    header h1 { font-size: 1rem; font-weight: 650; flex: 1; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .icon-btn {
-      border: 1px solid var(--line); background: var(--card); color: var(--text);
-      border-radius: 10px; padding: 7px 10px; cursor: pointer; font-size: .95rem;
+      border: 1px solid var(--line); background: rgba(255,255,255,.04); color: var(--text);
+      border-radius: 10px; padding: 7px 11px; cursor: pointer; font-size: .9rem; font-weight: 600;
     }
+    .icon-btn:active { background: rgba(255,255,255,.09); }
     main { max-width: 680px; margin: 0 auto; padding: 16px; }
     .hero {
-      background: linear-gradient(135deg, #1c1028, #140a1c);
-      border: 1px solid var(--line); border-radius: 18px; padding: 18px;
+      background: var(--card);
+      border: 1px solid var(--line); border-radius: 16px; padding: 18px;
       margin-bottom: 12px;
     }
-    .hero h2 { font-size: 1.35rem; margin-bottom: 4px; }
-    .hero p { color: var(--muted); font-size: .9rem; }
+    .hero h2 { font-size: 1.3rem; margin-bottom: 4px; letter-spacing: -.01em; }
+    .hero p { color: var(--muted); font-size: .9rem; line-height: 1.45; }
     .home-card, .park-card, .item-card, .food-card {
-      background: var(--card); border: 1px solid var(--line); border-radius: 16px;
-      padding: 15px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+      padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;
     }
     .home-card { margin-bottom: 10px; cursor: pointer; }
     .home-card:active, .park-card:active, .item-card:active { transform: scale(.985); background: var(--card2); }
     .home-left { display: flex; gap: 12px; align-items: center; }
     .badge-icon {
-      width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center;
-      background: #1c1028; font-size: 1.3rem;
+      width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center;
+      background: var(--accent-soft); font-size: 1.25rem; flex-shrink: 0;
     }
-    .kicker { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
-    .title { font-size: 1.02rem; font-weight: 650; }
+    .kicker { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; font-weight: 700; }
+    .title { font-size: 1rem; font-weight: 650; letter-spacing: -.01em; }
     .sub { font-size: .8rem; color: var(--muted); margin-top: 2px; }
     .search {
-      width: 100%; margin: 4px 0 14px; padding: 12px 14px; border-radius: 14px;
+      width: 100%; margin: 4px 0 14px; padding: 12px 14px; border-radius: 12px;
       border: 1px solid var(--line); background: var(--card); color: var(--text); font-size: 1rem;
     }
-    .section { font-size: .72rem; color: var(--gold); letter-spacing: .1em; text-transform: uppercase; font-weight: 700; margin: 18px 0 8px; }
+    .search:focus { outline: none; border-color: var(--accent); }
+    .search::placeholder { color: var(--gray); }
+    .section { font-size: .7rem; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; font-weight: 700; margin: 20px 0 8px; }
     .park-grid { display: grid; gap: 8px; }
     .hours-chip { font-size: .75rem; color: var(--muted); text-align: right; white-space: nowrap; }
     .hours-chip b { color: var(--text); display: block; font-size: .82rem; }
     .weather {
       display: flex; justify-content: space-between; align-items: center;
-      background: linear-gradient(135deg, #1c1028, #140a1c);
-      border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; margin-bottom: 12px;
+      background: var(--card);
+      border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px;
     }
-    .temp { font-size: 1.7rem; font-weight: 750; }
+    .temp { font-size: 1.7rem; font-weight: 750; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
     .legend { display: flex; gap: 10px; flex-wrap: wrap; color: var(--muted); font-size: .75rem; margin: 8px 0 12px; }
     .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
     .land-head {
       display: flex; align-items: center; justify-content: space-between; gap: 10px;
-      margin: 18px 0 10px; padding: 6px 2px 4px;
+      margin: 20px 0 10px; padding: 6px 2px 4px;
     }
     .land-head .land {
       margin: 0; padding: 4px 0;
-      font-size: 1.05rem; font-weight: 800; color: var(--gold);
-      letter-spacing: .04em; text-transform: uppercase; line-height: 1.2; flex: 1; min-width: 0;
+      font-size: .95rem; font-weight: 750; color: var(--text);
+      letter-spacing: .06em; text-transform: uppercase; line-height: 1.2; flex: 1; min-width: 0;
     }
     .land {
       margin: 16px 0 8px; padding: 8px 2px;
-      font-size: .95rem; font-weight: 800; color: var(--gold); letter-spacing: .04em; text-transform: uppercase;
+      font-size: .85rem; font-weight: 750; color: var(--text); letter-spacing: .06em; text-transform: uppercase;
     }
     .land-map { flex-shrink: 0; opacity: .95; }
     .land-map svg { width: 120px; height: auto; display: block; }
     .item-card { margin-bottom: 8px; cursor: default; }
     .wait {
-      min-width: 68px; text-align: center; font-weight: 800; font-size: .9rem;
-      padding: 6px 10px; border-radius: 999px;
+      min-width: 68px; text-align: center; font-weight: 750; font-size: .88rem;
+      padding: 6px 10px; border-radius: 999px; font-variant-numeric: tabular-nums;
     }
-    .g { background: rgba(61,220,132,.14); color: var(--green); }
-    .y { background: rgba(245,196,81,.14); color: var(--yellow); }
-    .r { background: rgba(255,93,108,.16); color: var(--red); }
-    .z { background: rgba(125,134,163,.14); color: var(--gray); }
+    .g { background: rgba(53,208,127,.13); color: var(--green); }
+    .y { background: rgba(240,196,83,.13); color: var(--yellow); }
+    .r { background: rgba(255,107,122,.14); color: var(--red); }
+    .z { background: rgba(139,148,167,.13); color: var(--gray); }
     .ll { font-size: .7rem; color: var(--muted); margin-top: 3px; text-align: right; }
     .note { color: var(--muted); font-size: .78rem; text-align: center; margin-top: 16px; line-height: 1.45; }
     .note a { color: var(--accent); }
     .loading { text-align: center; padding: 48px 16px; color: var(--muted); }
+    #toast {
+      position: fixed; left: 50%; bottom: 24px; z-index: 200;
+      transform: translateX(-50%) translateY(20px);
+      background: #1d2230; color: #fff; border: 1px solid rgba(255,255,255,.12);
+      padding: 12px 18px; border-radius: 14px; font-size: .9rem;
+      max-width: 88vw; text-align: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity .25s, transform .25s;
+      box-shadow: 0 8px 30px rgba(0,0,0,.5);
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     .spin { width: 26px; height: 26px; border: 3px solid var(--line); border-top-color: var(--accent); border-radius: 50%; margin: 0 auto 10px; animation: spin .7s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .tabs { display: flex; gap: 6px; margin-bottom: 12px; }
-    .tab { flex: 1; text-align: center; padding: 10px 8px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--text); font-weight: 700; font-size: .82rem; cursor: pointer; }
-    .tab.on { background: var(--accent); border-color: var(--accent); color: white; }
+    .tabs { display: flex; gap: 6px; margin-bottom: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 4px; }
+    .tab { flex: 1; text-align: center; padding: 9px 8px; border-radius: 10px; border: 0; background: transparent; color: var(--muted); font-weight: 650; font-size: .82rem; cursor: pointer; }
+    .tab.on { background: var(--accent-soft); color: var(--text); }
     .menu-row { display: flex; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
     .menu-row:last-child { border-bottom: none; }
-    .add-btn { border: 0; background: var(--accent); color: #fff; border-radius: 999px; padding: 8px 14px; font-weight: 700; cursor: pointer; width: 100%; font-size: 1rem; }
+    .add-btn { border: 0; background: var(--accent); color: #fff; border-radius: 12px; padding: 12px 14px; font-weight: 700; cursor: pointer; width: 100%; font-size: .95rem; }
+    .add-btn:active { filter: brightness(1.1); }
     .cart {
       position: sticky; bottom: 10px; margin-top: 16px;
-      background: #1c1028; border: 1px solid #3a2a4a; border-radius: 16px; padding: 12px 14px;
+      background: var(--card2); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px;
+      box-shadow: 0 12px 32px rgba(0,0,0,.35);
     }
-    .thumb { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; background: #1c1028; }
+    .thumb { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; background: var(--card2); }
     .cat-row { display: flex; gap: 6px; margin: 8px 0 12px; flex-wrap: wrap; }
     .cat-row button { flex: 1; min-width: 72px; }
     .cart b { font-size: 1.05rem; }
@@ -132,7 +155,7 @@
     .day .n { font-weight: 800; display: block; }
     .day .h { color: var(--muted); font-size: .62rem; }
     .day.today { border-color: var(--accent); }
-    .day.wknd { background: #1a0f24; }
+    .day.wknd { background: rgba(255,255,255,.02); }
     footer { text-align: center; color: var(--muted); font-size: .68rem; padding: 24px 16px; line-height: 1.5; }
     footer a { color: var(--accent); }
     .fx-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:0 0 12px; }
@@ -160,33 +183,37 @@
     .day-scan .receipt-row:last-child { border-bottom:none; }
     textarea.search { min-height:72px; resize:vertical; font-family:inherit; line-height:1.4; }
 
-    .home-stack { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
+    .home-stack { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
     .home-btn {
-      display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+      display: flex; align-items: center; gap: 14px;
       width: 100%; text-align: left; cursor: pointer;
-      border: 1px solid rgba(183,148,246,.28);
-      border-radius: 22px; padding: 22px 20px;
-      background: linear-gradient(145deg, #1c1028 0%, #160d1f 55%, #12081a 100%);
-      box-shadow: 0 10px 28px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.06);
-      color: var(--text); transition: transform .12s ease, border-color .12s ease;
+      border: 1px solid var(--line);
+      border-radius: 16px; padding: 16px;
+      background: var(--card);
+      color: var(--text); transition: transform .12s ease, background .12s ease;
     }
-    .home-btn:active { transform: scale(.975); border-color: var(--accent); }
+    .home-btn:active { transform: scale(.98); background: var(--card2); }
     .home-btn .home-emoji {
-      width: 56px; height: 56px; border-radius: 18px;
-      display: grid; place-items: center; font-size: 1.65rem;
-      background: rgba(183,148,246,.16); border: 1px solid rgba(183,148,246,.25);
+      width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;
+      display: grid; place-items: center; font-size: 1.4rem;
+      background: var(--accent-soft);
     }
-    .home-btn .home-label { font-size: 1.35rem; font-weight: 750; letter-spacing: .01em; }
-    .home-btn .home-hint { font-size: .88rem; color: var(--muted); line-height: 1.35; }
+    .home-btn .home-label { font-size: 1.05rem; font-weight: 700; letter-spacing: -.01em; }
+    .home-btn .home-hint { font-size: .82rem; color: var(--muted); line-height: 1.35; margin-top: 2px; }
     .home-hero {
-      text-align: center; padding: 28px 16px 18px;
+      text-align: left; padding: 20px 4px 14px;
     }
     .home-hero h2 {
-      font-size: 1.85rem; font-weight: 800; margin-bottom: 8px;
-      background: linear-gradient(90deg, #fff, #d4c4f0);
-      -webkit-background-clip: text; background-clip: text; color: transparent;
+      font-size: 1.7rem; font-weight: 800; margin-bottom: 6px; letter-spacing: -.02em;
     }
-    .home-hero p { color: var(--muted); font-size: .92rem; line-height: 1.45; max-width: 28rem; margin: 0 auto; }
+    .home-hero p { color: var(--muted); font-size: .92rem; line-height: 1.45; max-width: 28rem; }
+    .resume-btn {
+      display: block; width: 100%; text-align: left; cursor: pointer;
+      border: 1px solid transparent; border-radius: 14px; padding: 13px 16px; margin-bottom: 10px;
+      background: var(--accent-soft); color: var(--text);
+      font-size: .92rem; font-weight: 700;
+    }
+    .resume-btn:active { filter: brightness(1.15); }
   </style>
 </head>
 <body>
@@ -200,7 +227,6 @@
     Live waits from <a href="https://themeparks.wiki" target="_blank">ThemeParks.wiki</a> · Weather via Open-Meteo<br>
     Receipts stay on this phone. Not affiliated with Disney or Universal.
   </footer>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
 const API = "https://api.themeparks.wiki/v1";
 const PRIORITY = ["disneylandresort","waltdisneyworldresort","universalorlandoresort","universalresort_orlando","universalresort_hollywood"];
@@ -499,7 +525,8 @@ const MENUS = {
 };
 
 let destinations=[], view="home", mode=null, currentPark=null, currentFood=null;
-let hoursCache={}, weatherCache={}, cart=[];
+let weatherCache={}, cart=[];
+let liveCache={}; // parkId -> {ts, live, children, weather}: instant back-navigation, refreshed silently
 
 function esc(s){ return String(s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
 function waitClass(m){ if(m==null) return "z"; if(m<=15) return "g"; if(m<=40) return "y"; return "r"; }
@@ -541,32 +568,66 @@ function menuFor(name){
 function showLoading(msg){ document.getElementById("app").innerHTML = `<div class="loading"><div class="spin"></div>${esc(msg||"Loading…")}</div>`; }
 function showError(msg){ document.getElementById("app").innerHTML = `<div class="hero"><h2>Couldn’t load</h2><p>${esc(msg)}</p></div><button class="icon-btn" onclick="loadHome()">Try again</button>`; }
 
+// Non-blocking toast replaces window.alert (alerts are unreliable in mobile webviews)
+function toast(msg){
+  let t=document.getElementById("toast");
+  if(!t){ t=document.createElement("div"); t.id="toast"; document.body.appendChild(t); }
+  t.textContent=msg;
+  t.classList.add("show");
+  clearTimeout(t._h);
+  t._h=setTimeout(()=>t.classList.remove("show"), 3200);
+}
+// fetch with a timeout so slow networks (or a cold sync worker) can't hang the UI
+async function fetchTimeout(url, opts={}, ms=12000){
+  const c=new AbortController();
+  const h=setTimeout(()=>c.abort(), ms);
+  try{ return await fetch(url, {...opts, signal:c.signal}); }
+  finally{ clearTimeout(h); }
+}
+// The OCR engine is heavy (~2MB) — only download it the first time a receipt is scanned
+let _tessPromise=null;
+function loadTesseract(){
+  if(typeof Tesseract!=="undefined") return Promise.resolve();
+  if(!_tessPromise){
+    _tessPromise=new Promise((res,rej)=>{
+      const s=document.createElement("script");
+      s.src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+      s.onload=()=>res(); s.onerror=()=>rej(new Error("tesseract load"));
+      document.head.appendChild(s);
+    });
+  }
+  return _tessPromise;
+}
+
 function renderHome(){
   view="home"; mode=null; currentPark=null;
   document.getElementById("backBtn").style.display="none";
   document.getElementById("refreshBtn").style.display="none";
   document.getElementById("pageTitle").textContent="Park Day";
   const dmgSub=getAccount()?("Saved for "+esc(getAccount().name)):"Snap receipts · track the day";
+  const last=getLastPark();
+  const resumeHtml=last?`<button type="button" class="resume-btn" onclick="openPark('${last.id}','${esc(last.name).replace(/'/g,"\\'")}','${last.kind}')">Continue · ${esc(last.name)} →</button>`:"";
   document.getElementById("app").innerHTML = `
     <div class="home-hero">
       <h2>Park Day</h2>
       <p>Waits, spending, and your trip — three taps.</p>
     </div>
+    ${resumeHtml}
     <div class="home-stack">
       <button type="button" class="home-btn" onclick="showParkList('waits')">
         <div class="home-emoji">🎢</div>
-        <div class="home-label">Ride waits</div>
-        <div class="home-hint">Live times by land</div>
+        <div class="home-text"><div class="home-label">Ride waits</div>
+        <div class="home-hint">Live times by land</div></div>
       </button>
       <button type="button" class="home-btn" onclick="openDamages()">
         <div class="home-emoji">💸</div>
-        <div class="home-label">Daily Damages</div>
-        <div class="home-hint">${dmgSub}</div>
+        <div class="home-text"><div class="home-label">Daily Damages</div>
+        <div class="home-hint">${dmgSub}</div></div>
       </button>
       <button type="button" class="home-btn" onclick="openAccount()">
         <div class="home-emoji">👤</div>
-        <div class="home-label">Trip account</div>
-        <div class="home-hint">${accountHomeSub()}</div>
+        <div class="home-text"><div class="home-label">Trip account</div>
+        <div class="home-hint">${accountHomeSub()}</div></div>
       </button>
     </div>`;
 }
@@ -581,7 +642,7 @@ function showParkList(m){
     if(ai!==-1&&bi!==-1) return ai-bi; if(ai!==-1) return -1; if(bi!==-1) return 1;
     return a.name.localeCompare(b.name);
   });
-  let html=`<input class="search" id="search" placeholder="Search parks…" oninput="filterParks()">`;
+  let html=`<input class="search" id="search" placeholder="Search parks…" autocomplete="off" enterkeyhint="search" oninput="filterParks()">`;
   for(const dest of sorted){
     html+=`<div class="section">${esc(dest.name)}</div><div class="park-grid">`;
     for(const park of dest.parks){
@@ -603,64 +664,78 @@ function filterParks(){
   document.querySelectorAll(".park-card").forEach(c=>c.style.display=(!q||c.dataset.name.includes(q))?"flex":"none");
 }
 
-async function prefetchHours(sorted){
-  const parks=[];
-  for(const d of sorted.slice(0,4)) parks.push(...d.parks);
-  await Promise.all(parks.slice(0,16).map(async p=>{
-    const hrs=await getHours(p.id);
-    const el=document.getElementById("hrs-"+p.id);
-    if(el && hrs) el.innerHTML=`<b>${esc(hrs.label)}</b><span>${esc(hrs.range)}</span>`;
-  }));
-}
-
-async function getHours(parkId){
-  if(hoursCache[parkId] && Date.now()-hoursCache[parkId].ts<10*60*1000) return hoursCache[parkId].data;
-  try{
-    const res=await fetch(`${API}/entity/${parkId}/schedule`);
-    if(!res.ok) return null;
-    const data=await res.json();
-    const today=new Date().toISOString().slice(0,10);
-    const entry=(data.schedule||[]).find(s=>s.date===today) || (data.schedule||[])[0];
-    const info = entry ? {
-      label: entry.type==="OPERATING"?"Open today":(entry.type||"Hours"),
-      range: `${formatTime(entry.openingTime)} – ${formatTime(entry.closingTime)}`,
-      schedule: data.schedule||[]
-    } : null;
-    hoursCache[parkId]={ts:Date.now(), data:info};
-    return info;
-  }catch{return null;}
-}
-
 async function getWeather(parkId){
   if(weatherCache[parkId] && Date.now()-weatherCache[parkId].ts<10*60*1000) return weatherCache[parkId].data;
   const c=PARK_COORDS[parkId]; if(!c) return null;
   try{
-    const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c[0]}&longitude=${c[1]}&current=temperature_2m,weather_code,apparent_temperature,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph`);
+    const res=await fetchTimeout(`https://api.open-meteo.com/v1/forecast?latitude=${c[0]}&longitude=${c[1]}&current=temperature_2m,weather_code,apparent_temperature,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph`);
     if(!res.ok) return null;
     const data=await res.json();
     weatherCache[parkId]={ts:Date.now(), data}; return data;
   }catch{return null;}
 }
 
-async function openPark(parkId, parkName, kind){
+function saveLastPark(id, name, kind){
+  try{ localStorage.setItem("pd_lastPark", JSON.stringify({id, name, kind, ts:Date.now()})); }catch{}
+}
+function getLastPark(){
+  try{
+    const p=JSON.parse(localStorage.getItem("pd_lastPark")||"null");
+    if(p && p.id && Date.now()-p.ts < 24*3600*1000) return p; // a park day is today
+  }catch{}
+  return null;
+}
+
+async function openPark(parkId, parkName, kind, silent){
   view=kind; currentPark={id:parkId,name:parkName};
+  saveLastPark(parkId, parkName, kind);
   document.getElementById("backBtn").style.display="block";
   document.getElementById("refreshBtn").style.display="block";
   document.getElementById("pageTitle").textContent=parkName;
-  showLoading(kind==="food"?"Loading food spots…":"Loading live waits…");
+  const cached=liveCache[parkId];
+  if(cached && Date.now()-cached.ts < 90*1000){
+    // Instant: paint what we have, then refresh quietly underneath
+    try{
+      if(kind==="food") renderFood(cached.live, cached.children, cached.weather);
+      else renderRides(cached.live, cached.weather);
+    }catch{}
+    refreshParkData(parkId, kind, true);
+    return;
+  }
+  if(!silent) showLoading(kind==="food"?"Loading food spots…":"Loading live waits…");
+  await refreshParkData(parkId, kind, silent);
+}
+
+async function refreshParkData(parkId, kind, silent){
   try{
     const [liveRes, childRes, weather] = await Promise.all([
-      fetch(`${API}/entity/${parkId}/live`),
-      fetch(`${API}/entity/${parkId}/children`),
+      fetchTimeout(`${API}/entity/${parkId}/live`),
+      fetchTimeout(`${API}/entity/${parkId}/children`),
       getWeather(parkId)
     ]);
     if(!liveRes.ok) throw new Error("live");
     const live=await liveRes.json();
     const children=childRes.ok ? await childRes.json() : {children:[]};
+    // Drop late responses if the user already moved on
+    if(!currentPark || currentPark.id!==parkId || view!==kind) return;
+    liveCache[parkId]={ts:Date.now(), live, children, weather};
     if(kind==="food") renderFood(live, children, weather);
     else renderRides(live, weather);
   }catch(e){
-    showError("Could not load this park right now.");
+    if(!silent){
+      // Prefer a slightly stale screen over an error screen
+      const cached=liveCache[parkId];
+      if(cached){
+        try{
+          if(kind==="food") renderFood(cached.live, cached.children, cached.weather);
+          else renderRides(cached.live, cached.weather);
+          toast("Couldn’t refresh — showing last update.");
+          return;
+        }catch{}
+      }
+      showError("Could not load this park right now.");
+    }
+    else toast("Couldn’t refresh waits — will retry.");
     console.error(e);
   }
 }
@@ -703,7 +778,7 @@ function landMapSvg(parkId, activeLand){
   const dim="rgba(240,236,248,.55)";
   function poly(name, points){
     const on=name===activeLand;
-    const fill=on?(LAND_MAP_COLORS[name]||"#b794f6"):"none";
+    const fill=on?(LAND_MAP_COLORS[name]||"#8f7bf5"):"none";
     const sw=on?1.4:1;
     const op=on?1:.55;
     return `<polygon points="${points}" fill="${fill}" stroke="${on?stroke:dim}" stroke-width="${sw}" opacity="${op}" stroke-linejoin="round"/>`;
@@ -947,7 +1022,7 @@ function fxStatusLine(){
 }
 async function ensureFxRates(){
   try{
-    const res=await fetch("https://open.er-api.com/v6/latest/USD");
+    const res=await fetchTimeout("https://open.er-api.com/v6/latest/USD");
     if(!res.ok) throw new Error("fx http");
     const data=await res.json();
     if(data.result!=="success"||!data.rates) throw new Error("fx bad");
@@ -1190,7 +1265,7 @@ function openAccount(){
     </label>`;
 }
 async function postAccount(name,pin,action){
-  const res=await fetch(SYNC_BASE+"/account",{
+  const res=await fetchTimeout(SYNC_BASE+"/account",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({name,pin,action})
@@ -1204,27 +1279,27 @@ async function finishAccountOk(name,pin,res){
     if(data&&data.expiresAt){
       setExpiresAt(data.expiresAt);
       const until=formatGoodUntil(data.expiresAt);
-      if(until) alert("Good until "+until);
+      if(until) toast("Good until "+until);
     }
   }catch{}
   try{ await syncPull(); }catch(e){ /* keep local */ }
   renderHome();
 }
 async function doJoin(name,pin){
-  if(name.length<2 || pin.length<4){ alert("Need a last name and at least a 4-digit PIN."); return; }
+  if(name.length<2 || pin.length<4){ toast("Need a last name and at least a 4-digit PIN."); return; }
   try{
     const res=await postAccount(name,pin,"join");
-    if(res.status===404){ alert("No active trip with that last name — create one instead."); return; }
-    if(res.status===401){ alert("Wrong PIN for that last name."); return; }
+    if(res.status===404){ toast("No active trip with that last name — create one instead."); return; }
+    if(res.status===401){ toast("Wrong PIN for that last name."); return; }
     if(res.status===410){
       clearAccount();
-      alert("That trip expired (30 days). Create a new one with the same last name + PIN if you like.");
+      toast("That trip expired (30 days). Create a new one with the same last name + PIN if you like.");
       openAccount();
       return;
     }
-    if(!res.ok){ alert("Could not join — try again."); return; }
+    if(!res.ok){ toast("Could not join — try again."); return; }
     await finishAccountOk(name,pin,res);
-  }catch(e){ alert("Could not reach sync — check connection and try again."); }
+  }catch(e){ toast("Could not reach sync — check connection and try again."); }
 }
 async function joinTrip(){
   const name=(document.getElementById("joinName")?.value||"").trim();
@@ -1239,32 +1314,32 @@ async function rejoinTrip(){
 async function createTrip(){
   const name=(document.getElementById("createName")?.value||"").trim();
   const pin=(document.getElementById("createPin")?.value||"").trim();
-  if(name.length<2 || pin.length<4){ alert("Need a last name and at least a 4-digit PIN."); return; }
+  if(name.length<2 || pin.length<4){ toast("Need a last name and at least a 4-digit PIN."); return; }
   try{
     const res=await postAccount(name,pin,"create");
-    if(res.status===409){ alert("That last name already has a trip — Join with the correct PIN, or pick another name."); return; }
-    if(res.status===401){ alert("Wrong PIN for that last name."); return; }
+    if(res.status===409){ toast("That last name already has a trip — Join with the correct PIN, or pick another name."); return; }
+    if(res.status===401){ toast("Wrong PIN for that last name."); return; }
     if(res.status===410){
       clearAccount();
-      alert("That trip expired (30 days). Create again to start fresh.");
+      toast("That trip expired (30 days). Create again to start fresh.");
       openAccount();
       return;
     }
-    if(!res.ok){ alert("Could not create — try again."); return; }
+    if(!res.ok){ toast("Could not create — try again."); return; }
     await finishAccountOk(name,pin,res);
-  }catch(e){ alert("Could not reach sync — check connection and try again."); }
+  }catch(e){ toast("Could not reach sync — check connection and try again."); }
 }
 async function syncPull(){
   const a=getAccount();
   if(!a) return null;
   const q=new URLSearchParams({name:a.name,pin:a.pin});
-  const res=await fetch(SYNC_BASE+"/days?"+q.toString());
-  if(res.status===401){ alert("Wrong PIN for sync."); return null; }
+  const res=await fetchTimeout(SYNC_BASE+"/days?"+q.toString());
+  if(res.status===401){ toast("Wrong PIN for sync."); return null; }
   if(res.status===410){
     let exp="";
     try{ const d=await res.json(); exp=d.expiresAt||""; }catch{}
     clearAccount();
-    alert("This trip expired"+(exp?" on "+formatGoodUntil(exp):"")+". Sign in again to start a new 30-day account.");
+    toast("This trip expired"+(exp?" on "+formatGoodUntil(exp):"")+". Sign in again to start a new 30-day account.");
     openAccount();
     return null;
   }
@@ -1294,7 +1369,7 @@ async function syncPush(day, items){
     const payload={name:a.name,pin:a.pin,day,items};
     const b=loadBudgets()[day];
     if(b && Number.isFinite(+b.amount)) payload.budget={amount:+b.amount, currency:b.currency||"USD"};
-    const res=await fetch(SYNC_BASE+"/days",{
+    const res=await fetchTimeout(SYNC_BASE+"/days",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify(payload)
@@ -1326,8 +1401,8 @@ function importTrip(input){
       const data=JSON.parse(r.result);
       if(data.account) setAccount(data.account);
       if(data.store) saveStore(data.store);
-      alert("Imported."); renderHome();
-    }catch{ alert("Could not read that file."); }
+      toast("Imported."); renderHome();
+    }catch{ toast("Could not read that file."); }
   };
   r.readAsText(f);
 }
@@ -1519,7 +1594,7 @@ async function runReceiptOCR(dataUrl){
   const status=document.getElementById("ocrStatus");
   if(status) status.textContent="Reading total…";
   try{
-    if(typeof Tesseract==="undefined") throw new Error("no tesseract");
+    await loadTesseract();
     let ocrSrc=dataUrl;
     try{ ocrSrc=await preprocessReceiptForOCR(dataUrl); }catch(_){ /* use original */ }
     const psms=["6","11","4"];
@@ -1584,7 +1659,7 @@ function saveBudgetFromUI(){
   const raw=document.getElementById("budgetAmt")?.value;
   if(raw==null || String(raw).trim()==="") return;
   const amt=parseFloat(raw);
-  if(isNaN(amt)){ alert("Enter a budget amount."); return; }
+  if(isNaN(amt)){ toast("Enter a budget amount."); return; }
   const currency="USD";
   const prev=loadBudgets()[dayId()];
   if(prev && +prev.amount===amt && (prev.currency||"USD")===currency) return;
@@ -1593,7 +1668,7 @@ function saveBudgetFromUI(){
 }
 function addDamage(){
   const amt=parseFloat(document.getElementById("dmgAmt")?.value);
-  if(isNaN(amt)||amt<=0){ alert("Enter the receipt total."); return; }
+  if(isNaN(amt)||amt<=0){ toast("Enter the receipt total."); return; }
   const cur=(document.getElementById("dmgCurrency")?.value||"USD");
   const currency=CURRENCIES.includes(cur)?cur:"USD";
   const list=loadDamages();
@@ -1624,16 +1699,33 @@ function goBack(){
 function refreshCurrent(){
   if(currentPark && (view==="waits"||view==="food")) openPark(currentPark.id, currentPark.name, view);
 }
+// Keep wait times fresh while a park is open: silent refresh every 60s when the tab is visible
+setInterval(()=>{
+  if((view==="waits"||view==="food") && currentPark && !document.hidden){
+    refreshParkData(currentPark.id, view, true);
+  }
+}, 60000);
 
 async function loadHome(){
   showLoading("Loading parks…");
   try{
-    const res=await fetch(`${API}/destinations`);
+    const res=await fetchTimeout(`${API}/destinations`);
     if(!res.ok) throw new Error("dest");
     const data=await res.json();
     destinations=(data.destinations||[]).filter(d=>d.parks&&d.parks.length);
+    try{ localStorage.setItem("pd_destinations", JSON.stringify({ts:Date.now(), data:destinations})); }catch{}
     renderHome();
   }catch(e){
+    // Park wifi is spotty — fall back to the last park list we successfully loaded
+    try{
+      const cached=JSON.parse(localStorage.getItem("pd_destinations")||"null");
+      if(cached && cached.data && cached.data.length){
+        destinations=cached.data;
+        renderHome();
+        toast("Offline — showing your last park list.");
+        return;
+      }
+    }catch{}
     showError("Could not load the park list.");
   }
 }
