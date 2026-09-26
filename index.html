@@ -6,6 +6,12 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#0a0c10" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Park Day" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
   <link rel="preconnect" href="https://api.themeparks.wiki" />
   <link rel="preconnect" href="https://api.open-meteo.com" />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
@@ -49,6 +55,10 @@
       border-radius: 10px; padding: 7px 11px; cursor: pointer; font-size: .9rem; font-weight: 600;
     }
     .icon-btn:active { background: rgba(255,255,255,.09); }
+    .star-btn { border:0; background:transparent; color:var(--muted); font-size:1.3rem; cursor:pointer; padding:6px 4px; line-height:1; }
+    .star-btn.on { color:#f5b942; }
+    .ride-side { display:flex; align-items:center; gap:6px; }
+    .fav-bell { border:1px solid var(--line); background:rgba(255,255,255,.04); color:var(--text); border-radius:999px; padding:5px 10px; font-size:.72rem; font-weight:700; cursor:pointer; white-space:nowrap; margin-top:6px; width:100%; }
     main { max-width: 680px; margin: 0 auto; padding: 16px; }
     .hero {
       background: var(--card);
@@ -217,6 +227,8 @@
       font-size: .92rem; font-weight: 700;
     }
     .resume-btn:active { filter: brightness(1.15); }
+    .hrs-line:empty { display: none; }
+    .hrs-line { color: var(--accent); font-weight: 600; }
   </style>
 </head>
 <body>
@@ -230,6 +242,14 @@
     Live waits from <a href="https://themeparks.wiki" target="_blank">ThemeParks.wiki</a> · Weather via Open-Meteo<br>
     Receipts stay on this phone. Not affiliated with Disney or Universal.
   </footer>
+<script>
+// Register the service worker so the app installs and opens offline-capable
+if("serviceWorker" in navigator){
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("sw.js").catch(()=>{});
+  });
+}
+</script>
 <script>
 const API = "https://api.themeparks.wiki/v1";
 const PRIORITY = ["disneylandresort","waltdisneyworldresort","universalorlandoresort","universalresort_orlando","universalresort_hollywood"];
@@ -529,6 +549,7 @@ const MENUS = {
 
 let destinations=[], view="home", mode=null, currentPark=null, currentFood=null;
 let weatherCache={}, cart=[];
+let hoursCache={};
 let liveCache={}; // parkId -> {ts, live, children, weather}: instant back-navigation, refreshed silently
 
 function esc(s){ return String(s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
@@ -653,18 +674,54 @@ function showParkList(m){
         ? `openPark('${park.id}','${esc(park.name).replace(/'/g,"\\'")}','food')`
         : `openPark('${park.id}','${esc(park.name).replace(/'/g,"\\'")}','waits')`;
       html+=`<div class="park-card" data-name="${esc((park.name+" "+dest.name).toLowerCase())}" onclick="${click}">
-        <div><div class="title">${esc(park.name)}</div><div class="sub">${esc(dest.name)}</div></div>
+        <div><div class="title">${esc(park.name)}</div><div class="sub">${esc(dest.name)}</div><div class="sub hrs-line" data-hours="${park.id}"></div></div>
         <div>›</div>
       </div>`;
     }
     html+=`</div>`;
   }
   document.getElementById("app").innerHTML=html;
+  observeHours();
 }
 
 function filterParks(){
   const q=(document.getElementById("search")?.value||"").toLowerCase().trim();
   document.querySelectorAll(".park-card").forEach(c=>c.style.display=(!q||c.dataset.name.includes(q))?"flex":"none");
+}
+
+async function getHours(parkId){
+  if(hoursCache[parkId] && Date.now()-hoursCache[parkId].ts<10*60*1000) return hoursCache[parkId].data;
+  try{
+    const res=await fetchTimeout(`${API}/entity/${parkId}/schedule`);
+    if(!res.ok) return null;
+    const data=await res.json();
+    const today=new Date().toISOString().slice(0,10);
+    const entry=(data.schedule||[]).find(s=>s.date===today) || (data.schedule||[])[0];
+    const info = entry ? {
+      label: entry.type==="OPERATING"?"Open today":(entry.type||"Hours"),
+      range: `${formatTime(entry.openingTime)} – ${formatTime(entry.closingTime)}`
+    } : null;
+    hoursCache[parkId]={ts:Date.now(), data:info};
+    return info;
+  }catch{return null;}
+}
+
+// Fill in today's hours under each park card as it scrolls into view
+function observeHours(){
+  const els=[...document.querySelectorAll("[data-hours]")];
+  if(!els.length) return;
+  const load=async (el)=>{
+    const hrs=await getHours(el.dataset.hours);
+    if(document.body.contains(el)) el.textContent=hrs?`${hrs.label} · ${hrs.range}`:"";
+  };
+  if("IntersectionObserver" in window){
+    const io=new IntersectionObserver((entries)=>{
+      entries.forEach(en=>{ if(en.isIntersecting){ io.unobserve(en.target); load(en.target); } });
+    },{rootMargin:"200px"});
+    els.forEach(el=>io.observe(el));
+  }else{
+    els.forEach(load);
+  }
 }
 
 async function getWeather(parkId){
@@ -848,6 +905,60 @@ function landHeaderHtml(parkId, land){
   return `<div class="land-head"><div class="land">${esc(land)}</div><div class="land-map">${map}</div></div>`;
 }
 
+// Favorite rides: {parkId: {rideId: alertThresholdMinutes|null}}
+function loadFavs(){ try{ return JSON.parse(localStorage.getItem("pd_favs")||"{}"); }catch{ return {}; } }
+function saveFavs(f){ try{ localStorage.setItem("pd_favs", JSON.stringify(f)); }catch{} }
+function parkFavs(parkId){ const f=loadFavs(); return (f[parkId]&&typeof f[parkId]==="object")?f[parkId]:{}; }
+function toggleFav(rideId){
+  const pid=currentPark.id, favs=loadFavs();
+  favs[pid]=favs[pid]||{};
+  if(favs[pid][rideId]!=null){ delete favs[pid][rideId]; toast("Removed from favorites."); }
+  else { favs[pid][rideId]=null; toast("★ Added to favorites."); }
+  saveFavs(favs);
+  const cached=liveCache[pid];
+  if(cached) renderRides(cached.live, cached.weather);
+}
+const ALERT_STEPS=[0,15,30,45,60];
+function cycleAlert(rideId){
+  const pid=currentPark.id, favs=loadFavs();
+  favs[pid]=favs[pid]||{};
+  const cur=+favs[pid][rideId]||0;
+  const next=ALERT_STEPS[(ALERT_STEPS.indexOf(cur)+1)%ALERT_STEPS.length]||null;
+  favs[pid][rideId]=next;
+  saveFavs(favs);
+  toast(next?`🔔 Alert when under ${next} min.`:`Alert off.`);
+  const cached=liveCache[pid];
+  if(cached) renderRides(cached.live, cached.weather);
+}
+const alertedFavs={}; // "parkId:rideId" -> true, resets when the wait climbs back up
+function checkAlerts(parkId, live){
+  const favs=parkFavs(parkId);
+  const ids=Object.keys(favs).filter(id=>Number.isFinite(+favs[id])&&+favs[id]>0);
+  if(!ids.length) return;
+  const map={};
+  for(const e of (live.liveData||[])) map[e.id]=e;
+  ids.forEach(id=>{
+    const e=map[id]; if(!e) return;
+    const wait=e.queue?.STANDBY?.waitTime ?? null;
+    const th=+favs[id], key=parkId+":"+id;
+    if(e.status==="OPERATING" && wait!=null && wait<=th){
+      if(!alertedFavs[key]){ alertedFavs[key]=true; toast(`🔔 ${e.name}: ${wait} min — under your ${th} min alert`); }
+    } else {
+      delete alertedFavs[key];
+    }
+  });
+}
+function rideRowHtml(r, favs, inFavs){
+  const open=r.status==="OPERATING";
+  const fav=favs[r.id]!=null, th=+favs[r.id]||0;
+  const bell=inFavs?`<button type="button" class="fav-bell" title="Wait alert" onclick="cycleAlert('${r.id}')">${th>0?`🔔 ≤${th}m`:`🔕 off`}</button>`:"";
+  return `<div class="item-card"><div><div class="title">${esc(r.name)}</div>
+    ${!open?`<div class="sub">${esc(r.status||"Closed")}</div>`:""}
+    ${open&&r.single!=null?`<div class="sub">Single rider ${r.single} min</div>`:""}</div>
+    <div class="ride-side"><button type="button" class="star-btn${fav?" on":""}" aria-label="${fav?"Remove from":"Add to"} favorites" onclick="toggleFav('${r.id}')">${fav?"★":"☆"}</button>
+    <div><div class="wait ${open?waitClass(r.standby):"z"}">${open?formatWait(r.standby):esc(r.status||"Closed")}</div>
+    ${r.ll?`<div class="ll">LL ${esc(r.ll)}</div>`:""}${bell}</div></div></div>`;
+}
 function renderRides(live, weather){
   const rides=(live.liveData||[]).filter(e=>e.entityType==="ATTRACTION").map(e=>{
     const standby=e.queue?.STANDBY?.waitTime ?? null;
@@ -862,6 +973,8 @@ function renderRides(live, weather){
     }
     return {id:e.id,name:e.name,status:e.status,standby,single,ll,land:landFor(currentPark.id,e.name)};
   });
+  const favs=parkFavs(currentPark.id);
+  const favRides=rides.filter(r=>favs[r.id]!=null).sort((a,b)=>a.name.localeCompare(b.name));
   const groups={};
   for(const r of rides){ (groups[r.land] ||= []).push(r); }
   Object.values(groups).forEach(list=>list.sort((a,b)=>a.name.localeCompare(b.name)));
@@ -869,19 +982,17 @@ function renderRides(live, weather){
 
   let html=weatherBar(weather);
   html+=`<div class="legend"><span><span class="dot" style="background:var(--green)"></span>1–15</span><span><span class="dot" style="background:var(--yellow)"></span>16–40</span><span><span class="dot" style="background:var(--red)"></span>41+</span></div>`;
+  if(favRides.length){
+    html+=`<div class="section">★ Favorites</div>`;
+    favRides.forEach(r=>{ html+=rideRowHtml(r,favs,true); });
+  }
   for(const land of order){
     html+=landHeaderHtml(currentPark.id, land);
-    for(const r of groups[land]){
-      const open=r.status==="OPERATING";
-      html+=`<div class="item-card"><div><div class="title">${esc(r.name)}</div>
-        ${!open?`<div class="sub">${esc(r.status||"Closed")}</div>`:""}
-        ${open&&r.single!=null?`<div class="sub">Single rider ${r.single} min</div>`:""}</div>
-        <div><div class="wait ${open?waitClass(r.standby):"z"}">${open?formatWait(r.standby):esc(r.status||"Closed")}</div>
-        ${r.ll?`<div class="ll">LL ${esc(r.ll)}</div>`:""}</div></div>`;
-    }
+    for(const r of groups[land]) html+=rideRowHtml(r,favs,false);
   }
   html+=`<div class="note">Updated ${new Date().toLocaleTimeString()}</div>`;
   document.getElementById("app").innerHTML=html;
+  checkAlerts(currentPark.id, live);
 }
 
 function renderFood(live, children, weather){
@@ -1511,6 +1622,23 @@ function drawDamages(){
   const store=loadStore();
   const budgets=loadBudgets();
   const days=dayKeys(store).sort().reverse();
+  // Trip totals across every saved day
+  const tripItems=[];
+  days.forEach(d=>normalizeList(store[d]||[]).forEach(i=>tripItems.push(i)));
+  if(tripItems.length){
+    const tBy={food:0,clothes:0,other:0};
+    let tTotal=0;
+    tripItems.forEach(i=>{
+      const v=convertAmount(i.amount,i.currency||"USD",disp);
+      tTotal+=v;
+      const k=tBy[i.cat]!=null?i.cat:"other"; tBy[k]+=v;
+    });
+    const activeDays=days.filter(d=>(store[d]||[]).length).length||1;
+    html+=`<div class="section">Trip totals</div>
+    <div class="item-card"><div><div class="title">${fmtMoney(tTotal,disp)}</div>
+      <div class="sub">${tripItems.length} receipt${tripItems.length===1?"":"s"} · ${days.length} day${days.length===1?"":"s"} · avg ${fmtMoney(tTotal/activeDays,disp)}/day</div>
+      <div class="sub">Food ${fmtMoney(tBy.food,disp)} · Clothes ${fmtMoney(tBy.clothes,disp)} · Other ${fmtMoney(tBy.other,disp)}</div></div></div>`;
+  }
   html+=`<div class="section">Days scanned</div>`;
   if(!days.length){
     html+=`<div class="note">No saved days yet.</div>`;
