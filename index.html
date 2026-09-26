@@ -629,7 +629,6 @@ function renderHome(){
   document.getElementById("backBtn").style.display="none";
   document.getElementById("refreshBtn").style.display="none";
   document.getElementById("pageTitle").textContent="Park Day";
-  const dmgSub=getAccount()?("Saved for "+esc(getAccount().name)):"Snap receipts · track the day";
   const last=getLastPark();
   const resumeHtml=last?`<button type="button" class="resume-btn" onclick="openPark('${last.id}','${esc(last.name).replace(/'/g,"\\'")}','${last.kind}')">Continue · ${esc(last.name)} →</button>`:"";
   document.getElementById("app").innerHTML = `
@@ -647,12 +646,12 @@ function renderHome(){
       <button type="button" class="home-btn" onclick="openDamages()">
         <div class="home-emoji">💸</div>
         <div class="home-text"><div class="home-label">Daily Damages</div>
-        <div class="home-hint">${dmgSub}</div></div>
+        <div class="home-hint">Snap receipts · track the day</div></div>
       </button>
-      <button type="button" class="home-btn" onclick="openAccount()">
-        <div class="home-emoji">👤</div>
-        <div class="home-text"><div class="home-label">Trip account</div>
-        <div class="home-hint">${accountHomeSub()}</div></div>
+      <button type="button" class="home-btn" onclick="openBackup()">
+        <div class="home-emoji">💾</div>
+        <div class="home-text"><div class="home-label">Backup</div>
+        <div class="home-hint">Export / import your days</div></div>
       </button>
     </div>`;
 }
@@ -1152,37 +1151,44 @@ function renderCart(){
   </div>`;
 }
 
-const SYNC_BASE = "https://park-day-sync.zaylow86.workers.dev";
-function acctKey(){ return "parkday-account"; }
-function getAccount(){ try{ return JSON.parse(localStorage.getItem(acctKey())||"null"); }catch{ return null; } }
-function setAccount(a){ localStorage.setItem(acctKey(), JSON.stringify(a)); }
-function clearAccount(){ localStorage.removeItem(acctKey()); localStorage.removeItem("parkday-expires"); }
-function setExpiresAt(iso){ if(iso) localStorage.setItem("parkday-expires", iso); else localStorage.removeItem("parkday-expires"); }
-function getExpiresAt(){ return localStorage.getItem("parkday-expires")||""; }
-function daysLeft(){
-  const exp=getExpiresAt();
-  if(!exp) return null;
-  const ms=new Date(exp).getTime()-Date.now();
-  if(Number.isNaN(ms)) return null;
-  return Math.max(0, Math.ceil(ms/(24*60*60*1000)));
+// Daily Damages is local-only: everything lives in this phone's storage.
+// No accounts, no PINs, no server — what you delete stays deleted.
+const STORE_KEY="parkday-store";
+function storeKey(){ return STORE_KEY; }
+function loadStore(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)||"{}"); }catch{ return {}; } }
+function saveStore(s){ localStorage.setItem(STORE_KEY, JSON.stringify(pruneStore(s||{}))); }
+// Drop days with no receipts so empty days never pile up.
+// (Budgets live under __budgets and are kept — they apply when receipts are added.)
+function pruneStore(s){
+  Object.keys(s||{}).forEach(k=>{
+    if(k==="__budgets") return;
+    if(!Array.isArray(s[k])||!s[k].length) delete s[k];
+  });
+  return s;
 }
-function accountHomeSub(){
-  const a=getAccount();
-  if(!a) return "Join or create";
-  const d=daysLeft();
-  if(d!=null) return esc(a.name)+" · "+d+" day"+(d===1?"":"s")+" left";
-  return "Signed in as "+esc(a.name);
-}
-function formatGoodUntil(iso){
+// One-time move from the old per-account keys to the single local store.
+function migrateStore(){
   try{
-    const d=new Date(iso);
-    if(Number.isNaN(d.getTime())) return "";
-    return d.toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"});
-  }catch{ return ""; }
+    if(localStorage.getItem(STORE_KEY)!=null) return;
+    let best=null,bestScore=-1;
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i);
+      if(!k||!k.startsWith("parkday-store-")) continue;
+      try{
+        const s=JSON.parse(localStorage.getItem(k)||"{}");
+        const score=Object.keys(s).filter(x=>x!=="__budgets"&&Array.isArray(s[x])).reduce((n,x)=>n+s[x].length,0);
+        if(score>bestScore){ bestScore=score; best=s; }
+      }catch(e){}
+    }
+    if(best&&bestScore>0) localStorage.setItem(STORE_KEY, JSON.stringify(pruneStore(best)));
+    const drop=[];
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i);
+      if(k&&(k.startsWith("parkday-store-")||k==="parkday-account"||k==="parkday-expires"||k==="parkday-tombs")) drop.push(k);
+    }
+    drop.forEach(k=>localStorage.removeItem(k));
+  }catch(e){}
 }
-function storeKey(){ const a=getAccount(); return a ? "parkday-store-"+a.name.toLowerCase()+"-"+a.pin : "parkday-store-guest"; }
-function loadStore(){ try{ return JSON.parse(localStorage.getItem(storeKey())||"{}"); }catch{ return {}; } }
-function saveStore(s){ localStorage.setItem(storeKey(), JSON.stringify(s)); }
 function dayId(){ return new Date().toISOString().slice(0,10); }
 const FX_FALLBACK={USD:1,CAD:1.40,EUR:0.87,GBP:0.75,MXN:17.2,JPY:157,AUD:1.40,NZD:1.55,CHF:0.80};
 let FX=Object.assign({},FX_FALLBACK);
@@ -1263,7 +1269,7 @@ function migrateItem(i){
 }
 function normalizeList(list){ return (list||[]).map(migrateItem); }
 function loadDamages(){ const s=loadStore(); return normalizeList(s[dayId()]||[]); }
-function saveDamages(list){ const s=loadStore(); s[dayId()]=normalizeList(list); saveStore(s); syncPush(dayId(), s[dayId()]); }
+function saveDamages(list){ const s=loadStore(); s[dayId()]=normalizeList(list); saveStore(s); }
 function loadBudgets(){
   const s=loadStore();
   const b=s.__budgets;
@@ -1281,7 +1287,6 @@ function saveBudget(day, budget){
     s.__budgets[day]={ amount, currency: CURRENCIES.includes(currency)?currency:"USD" };
   }
   saveStore(s);
-  syncPush(day, normalizeList(s[day]||[]));
 }
 function dayKeys(store){
   return Object.keys(store||{}).filter(k=>k!=="__budgets" && Array.isArray(store[k]));
@@ -1437,216 +1442,24 @@ function parseReceiptText(text){
   return {total, merchant, kwScore};
 }
 let pendingPhoto="";
-function openAccount(){
-  view="account";
+function openBackup(){
+  view="backup";
   document.getElementById("backBtn").style.display="block";
   document.getElementById("refreshBtn").style.display="none";
-  document.getElementById("pageTitle").textContent="Trip account";
-  const a=getAccount();
-  const exp=getExpiresAt();
-  const good=exp?formatGoodUntil(exp):"";
-  if(a){
-    document.getElementById("app").innerHTML=`
-    <div class="hero"><h2>You're signed in</h2>
-      <p>Anyone in the party uses the same <strong>last name</strong> + <strong>4-digit PIN</strong>. Your account lasts <strong>30 days</strong> from create, then sync clears.</p></div>
-    <input class="search" id="acctName" placeholder="Last name (ex: Houtstra)" value="${esc(a.name)}">
-    <input class="search" id="acctPin" placeholder="4-digit PIN" inputmode="numeric" maxlength="8" value="${esc(a.pin)}">
-    <button class="add-btn" onclick="rejoinTrip()">Save trip account</button>
-    <div class="note" style="margin-top:10px">${good?"Good until "+esc(good)+" · days sync across phones":"Days sync across phones automatically. Export/Import still works as a backup."}</div>
-    <button class="icon-btn" style="width:100%;margin-top:10px" onclick="if(confirm('Sign out on this phone? Days stay on the server until the account expires.')){clearAccount();renderHome();}">Sign out</button>
-    <button class="icon-btn" style="width:100%;margin-top:10px" onclick="exportTrip()">Export backup</button>
-    <label class="icon-btn" style="display:block;text-align:center;margin-top:8px">Import backup
-      <input type="file" accept="application/json" style="display:none" onchange="importTrip(this)">
-    </label>`;
-    return;
-  }
+  document.getElementById("pageTitle").textContent="Backup";
   document.getElementById("app").innerHTML=`
-    <div class="hero"><h2>Trip account</h2>
-      <p>Share one <strong>last name</strong> + <strong>PIN</strong> with your party so Daily Damages sync across phones.</p></div>
-    <div class="section">Join active trip</div>
-    <input class="search" id="joinName" placeholder="Last name (ex: Houtstra)">
-    <input class="search" id="joinPin" placeholder="4-digit PIN" inputmode="numeric" maxlength="8">
-    <button class="add-btn" onclick="joinTrip()">Join</button>
-    <div class="section">Create trip</div>
-    <input class="search" id="createName" placeholder="Last name (ex: Houtstra)">
-    <input class="search" id="createPin" placeholder="Choose a 4-digit PIN" inputmode="numeric" maxlength="8">
-    <button class="add-btn" onclick="createTrip()">Create</button>
-    <div class="note" style="margin-top:10px">Data lasts <strong>30 days</strong> from create. After that the trip is wiped and you’ll need a new one.</div>
-    <label class="note" style="display:block;margin-top:14px;cursor:pointer"><a style="color:var(--accent)">Import backup</a>
+    <div class="hero"><h2>Backup</h2>
+      <p>Daily Damages live only on this phone. Export a backup file to keep it safe or move it to another phone.</p></div>
+    <button class="add-btn" onclick="exportTrip()">Export backup</button>
+    <label class="icon-btn" style="display:block;text-align:center;margin-top:8px;cursor:pointer">Import backup
       <input type="file" accept="application/json" style="display:none" onchange="importTrip(this)">
     </label>`;
-}
-async function postAccount(name,pin,action){
-  const res=await fetchTimeout(SYNC_BASE+"/account",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({name,pin,action})
-  });
-  return res;
-}
-async function finishAccountOk(name,pin,res){
-  setAccount({name,pin});
-  try{
-    const data=await res.json();
-    if(data&&data.expiresAt){
-      setExpiresAt(data.expiresAt);
-      const until=formatGoodUntil(data.expiresAt);
-      if(until) toast("Good until "+until);
-    }
-  }catch{}
-  try{ await syncPull(); }catch(e){ /* keep local */ }
-  renderHome();
-}
-async function doJoin(name,pin){
-  if(name.length<2 || pin.length<4){ toast("Need a last name and at least a 4-digit PIN."); return; }
-  try{
-    const res=await postAccount(name,pin,"join");
-    if(res.status===404){ toast("No active trip with that last name — create one instead."); return; }
-    if(res.status===401){ toast("Wrong PIN for that last name."); return; }
-    if(res.status===410){
-      clearAccount();
-      toast("That trip expired (30 days). Create a new one with the same last name + PIN if you like.");
-      openAccount();
-      return;
-    }
-    if(!res.ok){ toast("Could not join — try again."); return; }
-    await finishAccountOk(name,pin,res);
-  }catch(e){ toast("Could not reach sync — check connection and try again."); }
-}
-async function joinTrip(){
-  const name=(document.getElementById("joinName")?.value||"").trim();
-  const pin=(document.getElementById("joinPin")?.value||"").trim();
-  await doJoin(name,pin);
-}
-async function rejoinTrip(){
-  const name=(document.getElementById("acctName")?.value||"").trim();
-  const pin=(document.getElementById("acctPin")?.value||"").trim();
-  await doJoin(name,pin);
-}
-async function createTrip(){
-  const name=(document.getElementById("createName")?.value||"").trim();
-  const pin=(document.getElementById("createPin")?.value||"").trim();
-  if(name.length<2 || pin.length<4){ toast("Need a last name and at least a 4-digit PIN."); return; }
-  try{
-    const res=await postAccount(name,pin,"create");
-    if(res.status===409){ toast("That last name already has a trip — Join with the correct PIN, or pick another name."); return; }
-    if(res.status===401){ toast("Wrong PIN for that last name."); return; }
-    if(res.status===410){
-      clearAccount();
-      toast("That trip expired (30 days). Create again to start fresh.");
-      openAccount();
-      return;
-    }
-    if(!res.ok){ toast("Could not create — try again."); return; }
-    await finishAccountOk(name,pin,res);
-  }catch(e){ toast("Could not reach sync — check connection and try again."); }
-}
-// ---- Sync reliability: delete tombstones + ordered push/pull ----
-// Tombstones remember what the user deleted so a stale server copy can never
-// resurrect it. They clear once the delete is confirmed on the server.
-function loadTombs(){ try{ return JSON.parse(localStorage.getItem("parkday-tombs")||"{}"); }catch(e){ return {}; } }
-function saveTombs(t){ try{ localStorage.setItem("parkday-tombs", JSON.stringify(t)); }catch(e){} }
-function tombDay(d){ const t=loadTombs(); t.days=t.days||{}; t.days[d]=1; if(t.items) delete t.items[d]; saveTombs(t); }
-function tombItems(d, ids){ const t=loadTombs(); t.items=t.items||{}; t.items[d]=t.items[d]||{}; ids.forEach(id=>{ if(id) t.items[d][id]=1; }); saveTombs(t); }
-function clearTombsFor(d){ const t=loadTombs(); let ch=false; if(t.days&&t.days[d]){ delete t.days[d]; ch=true; } if(t.items&&t.items[d]){ delete t.items[d]; ch=true; } if(ch) saveTombs(t); }
-
-// Pushes are queued and retried: a failed/offline delete stays queued instead
-// of being silently dropped, and pulls always wait for queued pushes first.
-let syncChain=Promise.resolve();
-const pushQueue=new Map(); // day -> items (latest wins)
-function syncPush(day, items){
-  const a=getAccount(); if(!a) return syncChain;
-  pushQueue.set(day, items);
-  syncChain=syncChain.then(flushPushes).catch(()=>{});
-  return syncChain;
-}
-async function pushDay(a, day, items){
-  try{
-    const payload={name:a.name,pin:a.pin,day,items};
-    const b=loadBudgets()[day];
-    if(b && Number.isFinite(+b.amount)) payload.budget={amount:+b.amount, currency:b.currency||"USD"};
-    const res=await fetchTimeout(SYNC_BASE+"/days",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify(payload)
-    });
-    if(res.status===410) return true; // account gone; nothing left to converge
-    if(!res.ok) return false;
-    try{
-      const data=await res.json();
-      if(data&&data.expiresAt) setExpiresAt(data.expiresAt);
-    }catch(e){}
-    return true;
-  }catch(e){ return false; } // offline: stays queued, retried on next sync
-}
-async function flushPushes(){
-  const a=getAccount(); if(!a){ pushQueue.clear(); return; }
-  for(const [day, items] of Array.from(pushQueue.entries())){
-    let ok=false;
-    try{ ok=await pushDay(a, day, items); }catch(e){ ok=false; }
-    if(ok){ pushQueue.delete(day); clearTombsFor(day); }
-    else break; // keep order; retry everything later
-  }
-}
-window.addEventListener("online", ()=>{ flushPushes().catch(()=>{}); });
-async function syncPull(){
-  const a=getAccount();
-  if(!a) return null;
-  try{ await syncChain; }catch(e){}
-  await flushPushes(); // our latest changes (including deletes) reach the server before we read
-  const q=new URLSearchParams({name:a.name,pin:a.pin});
-  const res=await fetchTimeout(SYNC_BASE+"/days?"+q.toString());
-  if(res.status===401){ toast("Wrong PIN for sync."); return null; }
-  if(res.status===410){
-    let exp="";
-    try{ const d=await res.json(); exp=d.expiresAt||""; }catch{}
-    clearAccount();
-    toast("This trip expired"+(exp?" on "+formatGoodUntil(exp):"")+". Sign in again to start a new 30-day account.");
-    openAccount();
-    return null;
-  }
-  if(!res.ok) throw new Error("pull");
-  const data=await res.json();
-  if(data&&data.expiresAt) setExpiresAt(data.expiresAt);
-  if(data&&data.store&&typeof data.store==="object"){
-    const local=loadStore();
-    const tombs=loadTombs();
-    const merged=Object.assign({}, local);
-    Object.keys(data.store).forEach(k=>{
-      if(k==="__budgets") return;
-      if(tombs.days&&tombs.days[k]){
-        // We deleted this day; the delete hasn't been confirmed yet.
-        // If the server already shows it gone/empty, the delete landed: drop the tombstone.
-        const rl=data.store[k];
-        if(!Array.isArray(rl)||!rl.length){ const t=loadTombs(); if(t.days){ delete t.days[k]; saveTombs(t); } }
-        return; // never resurrect a deleted day from a stale server copy
-      }
-      let list=data.store[k];
-      if(Array.isArray(list)){
-        list=normalizeList(list);
-        const it=tombs.items&&tombs.items[k];
-        if(it) list=list.filter(i=>!(i&&it[i.id])); // never resurrect deleted receipts
-      }
-      merged[k]=list;
-    });
-    if(tombs.days) Object.keys(tombs.days).forEach(k=>{ delete merged[k]; });
-    if(local.__budgets && typeof local.__budgets==="object") merged.__budgets=Object.assign({}, local.__budgets);
-    if(data.budgets && typeof data.budgets==="object"){
-      merged.__budgets=Object.assign({}, merged.__budgets||{}, data.budgets);
-    }
-    saveStore(merged);
-  }else if(data&&data.budgets&&typeof data.budgets==="object"){
-    const s=loadStore();
-    s.__budgets=Object.assign({}, s.__budgets||{}, data.budgets);
-    saveStore(s);
-  }
-  return data;
 }
 function exportTrip(){
-  const blob=new Blob([JSON.stringify({account:getAccount(),store:loadStore()},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({store:loadStore()},null,2)],{type:"application/json"});
   const a=document.createElement("a");
   a.href=URL.createObjectURL(blob);
-  a.download=(getAccount()?.name||"trip")+"-damages.json";
+  a.download="park-day-damages.json";
   a.click();
 }
 function importTrip(input){
@@ -1655,24 +1468,20 @@ function importTrip(input){
   r.onload=()=>{
     try{
       const data=JSON.parse(r.result);
-      if(data.account) setAccount(data.account);
-      if(data.store) saveStore(data.store);
-      toast("Imported."); renderHome();
+      if(data&&data.store){ saveStore(data.store); toast("Imported."); }
+      else toast("No trip data in that file.");
+      renderHome();
     }catch{ toast("Could not read that file."); }
   };
   r.readAsText(f);
 }
 function openDamages(){
-  if(!getAccount()){ openAccount(); return; }
   view="damages";
   document.getElementById("backBtn").style.display="block";
   document.getElementById("refreshBtn").style.display="none";
   document.getElementById("pageTitle").textContent="Daily Damages";
   drawDamages();
   ensureFxRates().then(()=>{ if(view==="damages") drawDamages(); }).catch(()=>{});
-  if(getAccount()){
-    syncPull().then(()=>{ if(view==="damages") drawDamages(); }).catch(()=>{});
-  }
 }
 function drawDamages(){
   const disp=getDisplayCurrency();
@@ -1963,15 +1772,11 @@ function addDamage(){
   drawDamages();
 }
 function delDamage(id){
-  const d=dayId();
-  tombItems(d, [id]);
   saveDamages(loadDamages().filter(i=>i.id!==id));
   drawDamages();
 }
 function clearToday(){
   if(!confirm('Clear today?')) return;
-  const d=dayId();
-  tombItems(d, loadDamages().map(i=>i.id));
   saveDamages([]);
   drawDamages();
 }
@@ -1980,8 +1785,7 @@ function delDay(d){
   const s=loadStore();
   delete s[d];
   saveStore(s);
-  tombDay(d); // set before the push below so a stale server copy can't bring it back
-  saveBudget(d, null); // clears that day's budget, re-saves, and syncs the now-empty day
+  saveBudget(d, null); // clears that day's budget too
   drawDamages();
   toast("Day deleted.");
 }
@@ -2024,6 +1828,7 @@ async function loadHome(){
     showError("Could not load the park list.");
   }
 }
+migrateStore();
 loadHome();
 ensureFxRates().then(()=>{ if(view==="damages") drawDamages(); }).catch(()=>{});
 </script>
