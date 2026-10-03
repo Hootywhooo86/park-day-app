@@ -249,16 +249,36 @@
   <footer>
     Live waits from <a href="https://themeparks.wiki" target="_blank">ThemeParks.wiki</a> · Weather via Open-Meteo<br>
     Receipts stay on this phone. Not affiliated with Disney or Universal.<br>
-    <span id="appVer" style="opacity:.7"></span>
+    <span id="appVer" style="opacity:.7"></span> · <button type="button" id="updBtn" onclick="checkForUpdate()" style="background:none;border:0;color:var(--accent);font-size:.68rem;cursor:pointer;padding:0;text-decoration:underline">⟳ Check for updates</button>
   </footer>
 <script>
-const APP_VERSION="2026-10-03"; // bump on every release so we can confirm what's running
+const APP_VERSION="2026-10-03b"; // bump on every release so we can confirm what's running
 // Register the service worker so the app installs and opens offline-capable
 if("serviceWorker" in navigator){
   window.addEventListener("load", ()=>{
     navigator.serviceWorker.register("sw.js").catch(()=>{});
     const v=document.getElementById("appVer"); if(v) v.textContent="v"+APP_VERSION;
   });
+}
+// Manual update check: fetch the newest page with cache busted, compare versions, reload if newer
+async function checkForUpdate(){
+  const btn=document.getElementById("updBtn");
+  const orig=btn?btn.textContent:"";
+  if(btn) btn.textContent="Checking…";
+  try{
+    const res=await fetch("index.html?upd="+Date.now(), {cache:"no-store"});
+    if(!res.ok) throw new Error("net");
+    const txt=await res.text();
+    const m=txt.match(/APP_VERSION="([^"]+)"/);
+    if(!m){ toast("Couldn't read the latest version."); return; }
+    if(m[1]===APP_VERSION){ toast("You're on the latest version ("+APP_VERSION+")."); }
+    else{
+      toast("New version "+m[1]+" found — updating…");
+      try{ const reg=await navigator.serviceWorker.getRegistration(); if(reg) await reg.update(); }catch{}
+      setTimeout(()=>location.reload(), 1200);
+    }
+  }catch(e){ toast("Update check failed — are you offline?"); }
+  finally{ if(btn) btn.textContent=orig; }
 }
 </script>
 <script>
