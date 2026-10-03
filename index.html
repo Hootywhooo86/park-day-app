@@ -62,6 +62,10 @@
     .rode-btn { border:0; background:transparent; color:var(--muted); font-size:1.15rem; cursor:pointer; padding:6px 4px; line-height:1; }
     .rode-btn.on { color:var(--green); }
     .rode-count { font-size:.82rem; color:var(--muted); font-weight:650; margin:8px 2px 0; }
+    .crowd-bar { display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin:10px 0 4px; font-size:.85rem; font-weight:600; }
+    .crowd-track { height:8px; border-radius:999px; background:rgba(255,255,255,.08); margin-top:8px; overflow:hidden; }
+    .crowd-fill { height:100%; border-radius:999px; }
+    .crowd-num { font-size:.8rem; font-weight:700; margin-top:6px; }
     main { max-width: 680px; margin: 0 auto; padding: 16px; }
     .hero {
       background: var(--card);
@@ -248,7 +252,7 @@
     <span id="appVer" style="opacity:.7"></span>
   </footer>
 <script>
-const APP_VERSION="2026-09-26e"; // bump on every release so we can confirm what's running
+const APP_VERSION="2026-10-03"; // bump on every release so we can confirm what's running
 // Register the service worker so the app installs and opens offline-capable
 if("serviceWorker" in navigator){
   window.addEventListener("load", ()=>{
@@ -649,6 +653,11 @@ function renderHome(){
         <div class="home-text"><div class="home-label">Ride waits</div>
         <div class="home-hint">Live times by land</div></div>
       </button>
+      <button type="button" class="home-btn" onclick="openCrowds()">
+        <div class="home-emoji">👥</div>
+        <div class="home-text"><div class="home-label">Crowd levels</div>
+        <div class="home-hint">Which park is quiet right now</div></div>
+      </button>
       <button type="button" class="home-btn" onclick="openDamages()">
         <div class="home-emoji">💸</div>
         <div class="home-text"><div class="home-label">Daily Damages</div>
@@ -693,6 +702,69 @@ function showParkList(m){
 function filterParks(){
   const q=(document.getElementById("search")?.value||"").toLowerCase().trim();
   document.querySelectorAll(".park-card").forEach(c=>c.style.display=(!q||c.dataset.name.includes(q))?"flex":"none");
+}
+
+// Live crowd index: median standby wait across operating attractions → 1 (quiet) to 10 (packed)
+function crowdLevel(live){
+  const waits=(live.liveData||[])
+    .filter(e=>e.entityType==="ATTRACTION" && e.status==="OPERATING")
+    .map(e=>e.queue?.STANDBY?.waitTime)
+    .filter(w=>w!=null);
+  if(waits.length<5) return null;
+  waits.sort((a,b)=>a-b);
+  const med=waits[Math.floor(waits.length/2)];
+  return Math.min(10, Math.max(1, Math.round(med/5)));
+}
+function crowdLabel(l){ return l<=2?"Quiet":l<=4?"Light":l<=6?"Moderate":l<=8?"Busy":"Packed"; }
+function crowdColor(l){ return l<=3?"var(--green)":l<=6?"var(--yellow)":"var(--red)"; }
+function parkNameFor(id, fallback){
+  try{
+    const d=JSON.parse(localStorage.getItem("pd_destinations")||"{}").data||[];
+    for(const dest of d) for(const p of (dest.parks||[])) if(p.id===id) return p.name;
+  }catch{}
+  return fallback;
+}
+function crowdParks(){ return [
+  {id:DL_ID, name:"Disneyland"},
+  {id:DCA_ID, name:"Disney California Adventure"},
+  {id:MK_ID, name:"Magic Kingdom"},
+  {id:EPCOT_ID, name:"EPCOT"},
+  {id:HS_ID, name:"Hollywood Studios"},
+  {id:AK_ID, name:"Animal Kingdom"},
+]; }
+async function openCrowds(){
+  view="crowds"; currentPark=null;
+  document.getElementById("backBtn").style.display="block";
+  document.getElementById("refreshBtn").style.display="block";
+  document.getElementById("pageTitle").textContent="Crowd levels";
+  showLoading("Checking live crowds…");
+  const parks=crowdParks().map(p=>({...p, name:parkNameFor(p.id, p.name)}));
+  const results=await Promise.all(parks.map(async p=>{
+    try{
+      const cached=liveCache[p.id];
+      let live;
+      if(cached && cached.live && Date.now()-cached.ts<90*1000) live=cached.live;
+      else{
+        const res=await fetchTimeout(`${API}/entity/${p.id}/live`);
+        if(!res.ok) throw new Error("live");
+        live=await res.json();
+      }
+      return {...p, crowd:crowdLevel(live)};
+    }catch{ return {...p, crowd:null}; }
+  }));
+  if(view!=="crowds") return; // user moved on while we were fetching
+  results.sort((a,b)=>(b.crowd??-1)-(a.crowd??-1));
+  let html=`<div class="note" style="text-align:left;margin:0 0 12px">Live crowd index from current wait times · 1 = quiet, 10 = packed.</div>`;
+  for(const r of results){
+    const body = r.crowd==null
+      ? `<div class="sub">No live data right now</div>`
+      : `<div class="crowd-track"><div class="crowd-fill" style="width:${r.crowd*10}%;background:${crowdColor(r.crowd)}"></div></div>
+         <div class="crowd-num" style="color:${crowdColor(r.crowd)}">👥 ${r.crowd}/10 · ${crowdLabel(r.crowd)}</div>`;
+    html+=`<div class="item-card" onclick="openPark('${r.id}','${esc(r.name).replace(/'/g,"\\'")}','waits')">
+      <div><div class="title">${esc(r.name)}</div>${body}</div><div>›</div></div>`;
+  }
+  html+=`<div class="note">Updated ${new Date().toLocaleTimeString()}</div>`;
+  document.getElementById("app").innerHTML=html;
 }
 
 async function getHours(parkId){
@@ -1097,6 +1169,8 @@ function renderRides(live, weather){
 
   let html=weatherBar(weather);
   html+=`<div class="legend"><span><span class="dot" style="background:var(--green)"></span>1–15</span><span><span class="dot" style="background:var(--yellow)"></span>16–40</span><span><span class="dot" style="background:var(--red)"></span>41+</span></div>`;
+  const crowd=crowdLevel(live);
+  if(crowd!=null) html+=`<div class="crowd-bar"><span class="dot" style="background:${crowdColor(crowd)}"></span><span>👥 Crowd right now: <b>${crowd}/10</b> · ${crowdLabel(crowd)}</span></div>`;
   html+=`<div class="cat-row" style="margin-top:10px">
     <button type="button" class="tab${rideSort==="land"?" on":""}" onclick="setRideSort('land')">🗺 By land</button>
     <button type="button" class="tab${rideSort==="short"?" on":""}" onclick="setRideSort('short')">⚡ Shortest first</button>
@@ -1856,7 +1930,8 @@ function goBack(){
   else renderHome();
 }
 function refreshCurrent(){
-  if(currentPark && (view==="waits"||view==="food")) openPark(currentPark.id, currentPark.name, view);
+  if(view==="crowds") openCrowds();
+  else if(currentPark && (view==="waits"||view==="food")) openPark(currentPark.id, currentPark.name, view);
 }
 // Keep wait times fresh while a park is open: silent refresh every 60s when the tab is visible
 setInterval(()=>{
